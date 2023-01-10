@@ -1,6 +1,6 @@
 {
   "name": "joystick-controller",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A JavaScript virtual joystick controller for both desktop and mobile devices.",
   "scripts": {
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --extensions \".js,.ts,.tsx\" --out-dir dist/lib",
@@ -11,10 +11,9 @@
     "upload": "npm run build && npm version patch --no-commit-hooks --no-git-tag-version && npm publish"
   },
   "private": false,
-  "main": "dist/lib/index.js",
-  "types": "dist/es/index.d.ts",
+  "main": "dist/lib/joystick-controller.js",
   "unpkg": "dist/umd/joystick-controller.min.js",
-  "module": "dist/es/index.js",
+  "module": "dist/es/joystick-controller.js",
   "files": [
     "dist"
   ],
