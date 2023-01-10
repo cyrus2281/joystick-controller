@@ -26,8 +26,13 @@
  * @property {number} distance - distance of the joystick from center
  */
 
-/** A JavaScript library for creating a virtual joystick. */
-class Joystick {
+/** 
+ * A JavaScript library for creating a virtual joystick.
+ * @author Cyrus Mobini
+ * @version 1.0.3
+ * @docs https://github.com/cyrus2281/joystick-controller#readme
+ */
+class JoystickController {
   /**
    * Default options for the joystick
    * @type {JoystickOptions}
@@ -425,56 +430,4 @@ class Joystick {
   }
 }
 
-export default Joystick;
-
-// Test
-const x = document.querySelector("#x");
-const y = document.querySelector("#y");
-const xLeveled = document.querySelector("#xLeveled");
-const yLeveled = document.querySelector("#yLeveled");
-const distance = document.querySelector("#distance");
-const angle = document.querySelector("#angle");
-
-const x2 = document.querySelector("#x2");
-const y2 = document.querySelector("#y2");
-const xLeveled2 = document.querySelector("#xLeveled2");
-const yLeveled2 = document.querySelector("#yLeveled2");
-const distance2 = document.querySelector("#distance2");
-const angle2 = document.querySelector("#angle2");
-
-const joystick = new Joystick(
-  {
-    x: "25%",
-    y: "25%",
-    opacity: 0.5,
-    maxRange: 70,
-    joystickClass: "joystick",
-  },
-  (data) => {
-    x.innerHTML = data.x;
-    y.innerHTML = data.y;
-    xLeveled.innerHTML = data.leveledX;
-    yLeveled.innerHTML = data.leveledY;
-    distance.innerHTML = data.distance;
-    angle.innerHTML = data.angle;
-  }
-);
-const joystick2 = new Joystick(
-  {
-    x: "25%",
-    y: "25%",
-    leftToRight: false,
-    opacity: 0.5,
-    maxRange: 70,
-    joystickClass: "joystick",
-  },
-  (data) => {
-    x2.innerHTML = data.x;
-    y2.innerHTML = data.y;
-    xLeveled2.innerHTML = data.leveledX;
-    yLeveled2.innerHTML = data.leveledY;
-    distance2.innerHTML = data.distance;
-    angle2.innerHTML = data.angle;
-  }
-);
-window.joystick = joystick;
+export default JoystickController;
