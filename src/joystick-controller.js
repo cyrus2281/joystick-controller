@@ -1,35 +1,35 @@
 /**
  * Options for the joystick
  * @typedef {Object} JoystickOptions
- * @property {number} maxRange - Maximum range of the joystick
+ * @property {number} maxRange - Maximum range of the joystick dot (number of pixels)
  * @property {number} level - Number of level of the joystick (eg 10 would return integers between -10 and 10)
- * @property {number} radius - Radius of the joystick container
- * @property {number} joystickRadius - Radius of the joystick inner dot
+ * @property {number} radius - Radius of the joystick container (number of pixels)
+ * @property {number} joystickRadius - Radius of the joystick inner dot (number of pixels)
  * @property {number} opacity - Opacity of the joystick
- * @property {string} containerClass - Class for the joystick container for adding additional styles
- * @property {string} controllerClass - Class for the joystick controller for adding additional styles
+ * @property {string} containerClass - Class for the joystick container for adding additional styles (outer container)
+ * @property {string} controllerClass - Class for the joystick controller for adding additional styles (inner container)
  * @property {string} joystickClass - Class for the joystick dot for adding additional styles
- * @property {boolean} leftToRight - Left to right adjustment
- * @property {boolean} bottomToUp - Bottom to up adjustment
- * @property {string} x - x position of the joystick
- * @property {string} y - y position of the joystick
+ * @property {boolean} leftToRight - Left to right adjustment (x position from left)
+ * @property {boolean} bottomToUp - Bottom to up adjustment (y position from bottom)
+ * @property {string} x - x position of the joystick controller on screen (equal to left/right of css)
+ * @property {string} y - y position of the joystick controller on screen (equal to bottom/top of css)
  */
 
 /**
  * Joystick onMove Callback
  * @typedef {Object} JoystickOnMove
- * @property {number} x - x position of the joystick
- * @property {number} y - y position of the joystick
- * @property {number} leveledX - x position between -level to level
- * @property {number} leveledY - y position between -level to level
- * @property {number} angle - angle of the joystick in radians
- * @property {number} distance - distance of the joystick from center
+ * @property {number} x - x position of the joystick relative to the center of it
+ * @property {number} y - y position of the joystick relative to the center of it
+ * @property {number} leveledX - x position scaled and rounded to be a step between -level to level (level comes from options)
+ * @property {number} leveledY - y position scaled and rounded to be a step between -level to level (level comes from options)
+ * @property {number} angle - angle of the line between center of the joystick and position of the dot in radians
+ * @property {number} distance - distance of the dot from the center joystick
  */
 
 /** 
  * A JavaScript library for creating a virtual joystick.
  * @author Cyrus Mobini
- * @version 1.0.3
+ * @version 1.0.4
  * @docs https://github.com/cyrus2281/joystick-controller#readme
  */
 class JoystickController {

@@ -1,6 +1,6 @@
 {
   "name": "joystick-controller",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A JavaScript virtual joystick controller for both desktop and mobile devices.",
   "scripts": {
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --extensions \".js,.ts,.tsx\" --out-dir dist/lib",
@@ -49,7 +49,7 @@
     "joystick-controller",
     "controller",
     "gamepad",
-    "shock",
+    "touchpad",
     "touch-control",
     "touch-joystick"
   ],
