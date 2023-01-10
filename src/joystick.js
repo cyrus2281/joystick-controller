@@ -6,6 +6,9 @@
  * @property {number} radius - Radius of the joystick container
  * @property {number} joystickRadius - Radius of the joystick inner dot
  * @property {number} opacity - Opacity of the joystick
+ * @property {string} containerClass - Class for the joystick container for adding additional styles
+ * @property {string} controllerClass - Class for the joystick controller for adding additional styles
+ * @property {string} joystickClass - Class for the joystick dot for adding additional styles
  * @property {boolean} leftToRight - Left to right adjustment
  * @property {boolean} bottomToUp - Bottom to up adjustment
  * @property {string} x - x position of the joystick
@@ -38,6 +41,9 @@ class Joystick {
     opacity: 0.8,
     leftToRight: true,
     bottomToUp: true,
+    containerClass: "",
+    controllerClass: "",
+    joystickClass: "",
     x: "50%",
     y: "50%",
   };
@@ -84,8 +90,15 @@ class Joystick {
    */
   style;
   /**
-   * ID for the joystick
-   * @private
+   * ID for the joystick.
+   *
+   * You can access HTML Elements using a prefix and this ID.
+   *
+   * Container: .joystick-container-{id}
+   *
+   * Controller: .joystick-controller-{id}
+   *
+   * Joystick: .joystick-{id}
    * @type {string}
    */
   id;
@@ -150,7 +163,7 @@ class Joystick {
     this.style = document.createElement("style");
     this.style.setAttribute("id", "style-" + this.id);
     this.style.innerHTML = `
-        #container-${this.id} {
+        .joystick-container-${this.id} {
             box-sizing: border-box;
             position: fixed;
             outline: none;
@@ -161,7 +174,7 @@ class Joystick {
             }, ${this.options.bottomToUp ? "50%" : "-50%"});
         }
     
-        #controller-${this.id} {
+        .joystick-controller-${this.id} {
             box-sizing: border-box;
             outline: none;
             opacity: ${this.options.opacity};
@@ -173,7 +186,7 @@ class Joystick {
             background: radial-gradient(circle,#ebebeb55, #5c5c5c55);
         }
     
-        #stick-${this.id} {
+        .joystick-${this.id} {
             box-sizing: border-box;
             outline: none;
             position: absolute;
@@ -191,16 +204,27 @@ class Joystick {
 
     // Container
     this.container = document.createElement("div");
-    this.container.setAttribute("id", "container-" + this.id);
+    this.container.setAttribute("id", "joystick-container-" + this.id);
+    this.container.setAttribute(
+      "class",
+      "joystick-container-" + this.id + " " + this.options.containerClass
+    );
 
     // Controller
     this.controller = document.createElement("div");
-    this.controller.setAttribute("id", "controller-" + this.id);
+    this.controller.setAttribute("id", "joystick-controller-" + this.id);
+    this.controller.setAttribute(
+      "class",
+      "joystick-controller-" + this.id + " " + this.options.controllerClass
+    );
 
     // Stick
     this.joystick = document.createElement("div");
-    this.joystick.setAttribute("id", "stick-" + this.id);
-    this.joystick.setAttribute("draggable", "true");
+    this.joystick.setAttribute("id", "joystick-" + this.id);
+    this.joystick.setAttribute(
+      "class",
+      "joystick-" + this.id + " " + this.options.joystickClass
+    );
 
     // Append to Body
     this.controller.appendChild(this.joystick);
@@ -279,7 +303,7 @@ class Joystick {
     this.y = 0;
     this.leveledX = 0;
     this.leveledY = 0;
-    this.angle = Math.PI.toFixed(4);
+    this.angle = 0;
     this.distance = 0;
     // reset position of stick
     this.joystick.style.left = this.options.radius + "px";
@@ -337,9 +361,21 @@ class Joystick {
    */
   onTouchEvent = (event) => {
     event.preventDefault();
+    // Current touch (for multi-touch)
+    let touch;
+    if (event.touches.length > 1) {
+      for (let i = 0; i < event.touches.length; i++) {
+        const tc = event.touches.item(i);
+        if (tc.target === this.joystick) {
+          touch = tc;
+        }
+      }
+    } else {
+      touch = event.touches[0];
+    }
     // position of touch
-    const x = event.touches[0].clientX;
-    const y = event.touches[0].clientY;
+    const x = touch.clientX;
+    const y = touch.clientY;
     // update coordinates
     this.updateCoordinates(x, y);
   };
@@ -391,18 +427,28 @@ class Joystick {
 
 export default Joystick;
 
+// Test
 const x = document.querySelector("#x");
 const y = document.querySelector("#y");
 const xLeveled = document.querySelector("#xLeveled");
 const yLeveled = document.querySelector("#yLeveled");
 const distance = document.querySelector("#distance");
 const angle = document.querySelector("#angle");
+
+const x2 = document.querySelector("#x2");
+const y2 = document.querySelector("#y2");
+const xLeveled2 = document.querySelector("#xLeveled2");
+const yLeveled2 = document.querySelector("#yLeveled2");
+const distance2 = document.querySelector("#distance2");
+const angle2 = document.querySelector("#angle2");
+
 const joystick = new Joystick(
   {
-    x: "30%",
-    y: "20%",
+    x: "25%",
+    y: "25%",
     opacity: 0.5,
     maxRange: 70,
+    joystickClass: "joystick",
   },
   (data) => {
     x.innerHTML = data.x;
@@ -411,6 +457,24 @@ const joystick = new Joystick(
     yLeveled.innerHTML = data.leveledY;
     distance.innerHTML = data.distance;
     angle.innerHTML = data.angle;
+  }
+);
+const joystick2 = new Joystick(
+  {
+    x: "25%",
+    y: "25%",
+    leftToRight: false,
+    opacity: 0.5,
+    maxRange: 70,
+    joystickClass: "joystick",
+  },
+  (data) => {
+    x2.innerHTML = data.x;
+    y2.innerHTML = data.y;
+    xLeveled2.innerHTML = data.leveledX;
+    yLeveled2.innerHTML = data.leveledY;
+    distance2.innerHTML = data.distance;
+    angle2.innerHTML = data.angle;
   }
 );
 window.joystick = joystick;

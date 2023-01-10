@@ -1,7 +1,7 @@
 {
   "name": "joystick-controller",
-  "version": "1.0.1",
-  "description": "A joystick controller for JavaScript",
+  "version": "1.0.2",
+  "description": "A JavaScript virtual joystick controller for both desktop and mobile devices.",
   "main": "src/joystick.js",
   "scripts": {
     "build": "webpack --config ./bundler/webpack.prod.js",
