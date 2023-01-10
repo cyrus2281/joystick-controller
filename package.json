@@ -1,6 +1,6 @@
 {
   "name": "joystick-controller",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A joystick controller for JavaScript",
   "main": "src/joystick.js",
   "scripts": {

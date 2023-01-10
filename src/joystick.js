@@ -2,9 +2,10 @@
  * Options for the joystick
  * @typedef {Object} JoystickOptions
  * @property {number} maxRange - Maximum range of the joystick
- * @property {number} levels - Number of levels of the joystick
+ * @property {number} level - Number of level of the joystick (eg 10 would return integers between -10 and 10)
  * @property {number} radius - Radius of the joystick container
  * @property {number} joystickRadius - Radius of the joystick inner dot
+ * @property {number} opacity - Opacity of the joystick
  * @property {boolean} leftToRight - Left to right adjustment
  * @property {boolean} bottomToUp - Bottom to up adjustment
  * @property {string} x - x position of the joystick
@@ -16,6 +17,8 @@
  * @typedef {Object} JoystickOnMove
  * @property {number} x - x position of the joystick
  * @property {number} y - y position of the joystick
+ * @property {number} leveledX - x position between -level to level
+ * @property {number} leveledY - y position between -level to level
  * @property {number} angle - angle of the joystick in radians
  * @property {number} distance - distance of the joystick from center
  */
@@ -29,11 +32,12 @@ class Joystick {
    */
   options = {
     maxRange: 100,
-    levels: 10,
+    level: 10,
     radius: 50,
     joystickRadius: 30,
-    leftToRight: true, // left to right
-    bottomToUp: false, // bottom to upf
+    opacity: 0.8,
+    leftToRight: true,
+    bottomToUp: true,
     x: "50%",
     y: "50%",
   };
@@ -53,6 +57,16 @@ class Joystick {
    * @type {number}
    */
   y = 0;
+  /**
+   * x position of the joystick scaled to be between -level and +level
+   * @type {number}
+   */
+  leveledX = 0;
+  /**
+   * y position of the joystick scaled to be between -level and +level
+   * @type {number}
+   */
+  leveledY = 0;
   /**
    * angle of the joystick in radians
    * @type {number}
@@ -149,13 +163,14 @@ class Joystick {
     
         #controller-${this.id} {
             box-sizing: border-box;
-            border: 1px solid black;
             outline: none;
+            opacity: ${this.options.opacity};
             width: ${this.options.radius * 2}px;
             height: ${this.options.radius * 2}px;
             border-radius: 50%;
-            background-color: white;
             position: relative;
+            outline: 2px solid #4c4c4c77;
+            background: radial-gradient(circle,#ebebeb55, #5c5c5c55);
         }
     
         #stick-${this.id} {
@@ -167,10 +182,10 @@ class Joystick {
             height: ${this.options.joystickRadius * 2}px;
             z-index: 1;
             border-radius: 50%;
-            background-color: black;
             left: 50%;
             bottom: 50%;
             transform: translate(-50%, 50%);
+            background: radial-gradient(#000c, #3e3f46aa);
         }
         `;
 
@@ -233,6 +248,13 @@ class Joystick {
     this.x = Math.round(Math.cos(this.angle) * adjustedDistance);
     // y offset from center
     this.y = -Math.round(Math.sin(this.angle) * adjustedDistance);
+    // Scaling x and y to be between -level and +level
+    this.leveledX = Math.round(
+      (this.x / this.options.maxRange) * this.options.level
+    );
+    this.leveledY = Math.round(
+      (this.y / this.options.maxRange) * this.options.level
+    );
     // setting position of stick
     this.joystick.style.left = this.options.radius + this.x + "px";
     this.joystick.style.bottom = this.options.radius + this.y + "px";
@@ -241,6 +263,8 @@ class Joystick {
       this.onMove({
         x: this.x,
         y: this.y,
+        leveledX: this.leveledX,
+        leveledY: this.leveledY,
         distance: this.distance,
         angle: this.angle,
       });
@@ -253,13 +277,20 @@ class Joystick {
   resetCoordinates = () => {
     this.x = 0;
     this.y = 0;
+    this.leveledX = 0;
+    this.leveledY = 0;
     this.angle = Math.PI.toFixed(4);
     this.distance = 0;
+    // reset position of stick
+    this.joystick.style.left = this.options.radius + "px";
+    this.joystick.style.bottom = this.options.radius + "px";
     // Triggering Event
     this.onMove &&
       this.onMove({
         x: this.x,
         y: this.y,
+        leveledX: this.leveledX,
+        leveledY: this.leveledY,
         distance: this.distance,
         angle: this.angle,
       });
@@ -295,9 +326,6 @@ class Joystick {
     // style adjustment
     this.joystick.style.transition = "all 0.2s ease-in-out";
     this.joystick.style.cursor = "grab";
-    // reset position of stick
-    this.joystick.style.left = this.options.radius + "px";
-    this.joystick.style.bottom = this.options.radius + "px";
     // reset values
     this.resetCoordinates();
   };
@@ -365,12 +393,24 @@ export default Joystick;
 
 const x = document.querySelector("#x");
 const y = document.querySelector("#y");
+const xLeveled = document.querySelector("#xLeveled");
+const yLeveled = document.querySelector("#yLeveled");
 const distance = document.querySelector("#distance");
 const angle = document.querySelector("#angle");
-const joystick = new Joystick({}, (data) => {
-  x.innerHTML = data.x;
-  y.innerHTML = data.y;
-  distance.innerHTML = data.distance;
-  angle.innerHTML = data.angle;
-});
+const joystick = new Joystick(
+  {
+    x: "30%",
+    y: "20%",
+    opacity: 0.5,
+    maxRange: 70,
+  },
+  (data) => {
+    x.innerHTML = data.x;
+    y.innerHTML = data.y;
+    xLeveled.innerHTML = data.leveledX;
+    yLeveled.innerHTML = data.leveledY;
+    distance.innerHTML = data.distance;
+    angle.innerHTML = data.angle;
+  }
+);
 window.joystick = joystick;
