@@ -1,7 +1,9 @@
 # Joystick Controller
 
-![GitHub package.json version](https://img.shields.io/github/package-json/v/cyrus2281/joystick-controller)
+![npm](https://img.shields.io/npm/v/joystick-controller)
 ![GitHub](https://img.shields.io/github/license/cyrus2281/joystick-controller)
+
+![joystick-controller](./example//joystick-controller.jpg)
 
 A fully customizable JavaScript virtual joystick controller for both desktop and mobile devices supporting multi instances.
 [Live Demo](https://joystick-controller.netlify.app)
@@ -9,13 +11,17 @@ A fully customizable JavaScript virtual joystick controller for both desktop and
 
 ## Installation
 
-> npm install joystick-controller
-
+```
+npm install joystick-controller
+```
 ## Quick Start
 
 ```js
+import JoystickController from 'joystick-controller';
+
 const joystick = new JoystickController({}, (date) => console.log(data));
 ```
+The import example here is module style import. JoystickController also supports global and commonJs import style.
 
 ## Options
 
