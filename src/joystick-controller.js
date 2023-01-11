@@ -13,6 +13,7 @@
  * @property {boolean} bottomToUp - Bottom to up adjustment (y position from bottom)
  * @property {string} x - x position of the joystick controller on screen (equal to left/right of css)
  * @property {string} y - y position of the joystick controller on screen (equal to bottom/top of css)
+ * @property {boolean} distortion - if true, the joystick will be distorted when the dot is moved to the edge of the joystick
  */
 
 /**
@@ -26,13 +27,19 @@
  * @property {number} distance - distance of the dot from the center joystick
  */
 
-/** 
+/**
  * A JavaScript library for creating a virtual joystick.
  * @author Cyrus Mobini
- * @version 1.0.4
+ * @version 1.0.7
  * @docs https://github.com/cyrus2281/joystick-controller#readme
  */
 class JoystickController {
+  /**
+   * Default transition for the joystick
+   * @type {string}
+   * @private
+   */
+  JOYSTICK_TRANSITION = 'border-radius 0.2s ease-in-out'
   /**
    * Default options for the joystick
    * @type {JoystickOptions}
@@ -51,6 +58,7 @@ class JoystickController {
     joystickClass: "",
     x: "50%",
     y: "50%",
+    distortion: false,
   };
 
   /**
@@ -204,6 +212,7 @@ class JoystickController {
             bottom: 50%;
             transform: translate(-50%, 50%);
             background: radial-gradient(#000c, #3e3f46aa);
+            transition: ${this.JOYSTICK_TRANSITION};
         }
         `;
 
@@ -287,6 +296,8 @@ class JoystickController {
     // setting position of stick
     this.joystick.style.left = this.options.radius + this.x + "px";
     this.joystick.style.bottom = this.options.radius + this.y + "px";
+    // distort joystick
+    this.options.distortion && this.distortJoystick();
     // Triggering Event
     this.onMove &&
       this.onMove({
@@ -313,6 +324,8 @@ class JoystickController {
     // reset position of stick
     this.joystick.style.left = this.options.radius + "px";
     this.joystick.style.bottom = this.options.radius + "px";
+    // reset joystick distortion
+    this.options.distortion && this.distortJoystick();
     // Triggering Event
     this.onMove &&
       this.onMove({
@@ -323,6 +336,22 @@ class JoystickController {
         distance: this.distance,
         angle: this.angle,
       });
+  };
+
+  /**
+   * Distort joystick based on distance if further than 70% of maxRange
+   * @private
+   */
+  distortJoystick = () => {
+    if (this.distance > this.options.maxRange * 0.7) {
+      // distorting joystick
+      this.joystick.style.borderRadius = "70% 80% 70% 15%";
+      this.joystick.style.transform = `translate(-50%, 50%) rotate(${+this.angle + Math.PI / 4}rad)`;
+    } else {
+      // resting to default
+      this.joystick.style.borderRadius = "50%";
+      this.joystick.style.transform = `translate(-50%, 50%) rotate(${Math.PI / 4}rad})`;
+    }
   };
 
   /**
@@ -337,7 +366,7 @@ class JoystickController {
       window.addEventListener("mouseup", this.onStopEvent);
     }
     // style adjustment
-    this.joystick.style.transition = "none";
+    this.joystick.style.transition = this.JOYSTICK_TRANSITION;
     this.joystick.style.cursor = "grabbing";
   };
 
