@@ -28,9 +28,11 @@
             <p>Angle: <span id="angle2"></span></p>
         </div>
     </div>
-    <script src="https://cdn.statically.io/gh/cyrus2281/joystick-controller/main/dist/umd/joystick-controller.min.js"></script>
-    <!-- <script src="../dist/umd/joystick-controller.js"></script> -->
-    <script>
+    <!-- <script src="https://cdn.statically.io/gh/cyrus2281/joystick-controller/main/dist/umd/joystick-controller.min.js"></script> -->
+    <script type="module">
+        // uncomment for dev. (the CDN uses the global import, no need for module import)
+        import JoystickController from '../src/joystick-controller.js';
+
         const x = document.querySelector("#x");
         const y = document.querySelector("#y");
         const xLeveled = document.querySelector("#xLeveled");
@@ -46,11 +48,14 @@
         const angle2 = document.querySelector("#angle2");
 
         const joystick = new JoystickController({
-                x: "25%",
-                y: "25%",
+                x: "30%",
+                y: "30%",
                 opacity: 0.5,
-                maxRange: 70,
+                maxRange: 80,
+                radius: 70,
+                joystickRadius: 40,
                 joystickClass: "joystick",
+                distortion: false,
             },
             (data) => {
                 x.innerHTML = data.x;
@@ -62,12 +67,13 @@
             }
         );
         const joystick2 = new JoystickController({
-                x: "25%",
-                y: "25%",
+                x: "20%",
+                y: "20%",
                 leftToRight: false,
                 opacity: 0.5,
-                maxRange: 70,
+                maxRange: 100,
                 joystickClass: "joystick",
+                distortion: true,
             },
             (data) => {
                 x2.innerHTML = data.x;
