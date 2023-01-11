@@ -3,7 +3,7 @@
 ![npm](https://img.shields.io/npm/v/joystick-controller)
 ![GitHub](https://img.shields.io/github/license/cyrus2281/joystick-controller)
 
-![joystick-controller](https://github.com/cyrus2281/joystick-controller/tree/main/example/joystick-controller.gif)
+![joystick-controller](https://raw.githubusercontent.com/cyrus2281/joystick-controller/main/example/joystick-controller.gif)
 
 A fully customizable JavaScript virtual joystick controller for both desktop and mobile devices supporting multi instances.
 [Live Demo](https://joystick-controller.netlify.app)
