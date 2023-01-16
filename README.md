@@ -74,6 +74,7 @@ const joystick = new JoystickController(
     containerClass: "joystick-container",
     controllerClass: "joystick-controller",
     joystickClass: "joystick",
+    distortion: true,
     x: "25%",
     y: "25%",
   },
