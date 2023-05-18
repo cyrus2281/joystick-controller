@@ -31,19 +31,20 @@ You can pass a set of options as the first argument to further customize your jo
 
 | Name            | Type    | Default | Description                                                                               |
 | --------------- | ------- | ------- | ----------------------------------------------------------------------------------------- |
-| maxRange        | number  | 100     | Maximum range of the joystick dot (number of pixels)                                      |
-| level           | number  | 10      | Number of level of the joystick (eg 10 would return integers between -10 and 10)          |
-| radius          | number  | 50      | Radius of the joystick container (number of pixels)                                       |
-| joystickRadius  | 30      | number  | Radius of the joystick inner dot (number of pixels)                                       |
-| opacity         | number  | 0.8     | Opacity of the joystick                                                                   |
-| containerClass  | string  | ''      | Class for the joystick container for adding additional styles (outer container)           |
-| controllerClass | string  | ''      | Class for the joystick controller for adding additional styles (inner container)          |
-| joystickClass   | string  | ''      | Class for the joystick dot for adding additional styles                                   |
-| leftToRight     | boolean | true    | Left to right adjustment (x position from left)                                           |
-| bottomToUp      | boolean | true    | Bottom to up adjustment (y position from bottom)                                          |
-| x               | string  | '50%'   | x position of the joystick controller on screen (equal to left/right of css)              |
-| y               | string  | '50%'   | y position of the joystick controller on screen (equal to bottom/top of css)              |
+| maxRange        | number  | 100     | Maximum range of the joystick dot (number of pixels)|
+| level           | number  | 10      | Number of level of the joystick (eg 10 would return integers between -10 and 10)|
+| radius          | number  | 50      | Radius of the joystick container (number of pixels)|
+| joystickRadius  | 30      | number  | Radius of the joystick inner dot (number of pixels)|
+| opacity         | number  | 0.8     | Opacity of the joystick|
+| containerClass  | string  | ''      | Class for the joystick container for adding additional styles (outer container)|
+| controllerClass | string  | ''      | Class for the joystick controller for adding additional styles (inner container)|
+| joystickClass   | string  | ''      | Class for the joystick dot for adding additional styles|
+| leftToRight     | boolean | true    | Left to right adjustment (x position from left)(ignored if dynamicPosition=true)|
+| bottomToUp      | boolean | true    | Bottom to up adjustment (y position from bottom)(ignored if dynamicPosition=true)|
+| x               | string  | '50%'   | x position of the joystick controller on screen (equal to left/right of css)(ignored if dynamicPosition=true)|
+| y               | string  | '50%'   | y position of the joystick controller on screen (equal to bottom/top of css)(ignored if dynamicPosition=true)|
 | distortion      | boolean | false   | if true, the joystick will be distorted when the dot is moved to the edge of the joystick |
+| dynamicPosition       | boolean  | false     | Shows the joystick when the user touch/click on the screen at the position where it was clicked/touched|
 
 ## Callback Arguments
 
