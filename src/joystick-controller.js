@@ -160,7 +160,24 @@ class JoystickController {
   constructor(options, onMove) {
     this.options = Object.assign(this.options, options);
     this.onMove = onMove;
+    this.validate();
     this.init();
+  }
+
+  /**
+   * Validates options or status of window for joysticks
+   * @private
+   */
+  validate() {
+    if (
+      window.__active_joysticks__ &&
+      window.__active_joysticks__.length > 0 &&
+      this.options.dynamicPosition
+    ) {
+      throw new Error(
+        "You can't have multiple joysticks on the screen if there's a joystick with dynamic position."
+      );
+    }
   }
 
   /**
@@ -172,6 +189,12 @@ class JoystickController {
     this.id =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
+
+    // Adding to active joysticks
+    window.__active_joysticks__ = Object.assign(
+      window.__active_joysticks__ || [],
+      [this]
+    );
 
     // Styles
     this.style = document.createElement("style");
@@ -547,6 +570,13 @@ class JoystickController {
     // removing elements
     document.head.removeChild(this.style);
     document.body.removeChild(this.container);
+
+    // removing from active joysticks
+    if (Array.isArray(window.__active_dynamic_joystick__))
+      window.__active_dynamic_joystick__ =
+        window.__active_dynamic_joystick__.filter(
+          (joystick) => joystick !== this
+        );
   }
 }
 
