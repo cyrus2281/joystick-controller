@@ -152,6 +152,12 @@ class JoystickController {
    * @type {boolean}
    */
   started;
+  /**
+   * Identifier for the joystick for dynamic positioning
+   * @private
+   * @type {number|null}
+   */
+  identifier= null
 
   /**
    * @param {JoystickOptions} options - Options for the joystick
@@ -330,6 +336,10 @@ class JoystickController {
    */
   dynamicPositioningTouch = (event) => {
     // Current touch (for multi-touch)
+    if (event.type === "touchstart") {
+      if (this.identifier !== null) return;
+      this.identifier = event.changedTouches[0].identifier;
+    }
     let touch;
     if (event.touches.length > 1) {
       for (let i = 0; i < event.touches.length; i++) {
@@ -357,6 +367,11 @@ class JoystickController {
    * @param {Event} e mousedown/touchend event
    */
   removeDynamicPositioning = (e) => {
+    if (e.type === "touchend") {
+      const identifier = e.changedTouches[0].identifier;
+      if (this.identifier !== identifier) return;
+      this.identifier = null;
+    }
     this.onStopEvent(e);
     this.container.remove();
   };
@@ -498,10 +513,15 @@ class JoystickController {
     event.preventDefault();
     // Current touch (for multi-touch)
     let touch;
-    if (event.touches.length > 1) {
+    if (event.touches.length > 0) {
       for (let i = 0; i < event.touches.length; i++) {
         const tc = event.touches.item(i);
-        if (tc.target === this.joystick) {
+        if (
+          this.identifier !== null &&
+          this.identifier === tc.identifier
+        ) {
+          touch = tc;
+        } else if (tc.target === this.joystick) {
           touch = tc;
         }
       }
