@@ -27,10 +27,13 @@
  * @property {number} distance - distance of the dot from the center joystick
  */
 
+const JOYSTICK_WINDOW_IDENTIFIER = "__joysticks_identifiers__";
+const JOYSTICK_WINDOW_ACTIVE = "__active_joysticks__";
+
 /**
  * A JavaScript library for creating a virtual joystick.
  * @author Cyrus Mobini
- * @version 1.0.7
+ * @version 1.0.12
  * @docs https://github.com/cyrus2281/joystick-controller#readme
  */
 class JoystickController {
@@ -152,6 +155,12 @@ class JoystickController {
    * @type {boolean}
    */
   started;
+  /**
+   * Identifier for the joystick for dynamic positioning
+   * @private
+   * @type {number|string|null}
+   */
+  identifier = null;
 
   /**
    * @param {JoystickOptions} options - Options for the joystick
@@ -170,12 +179,12 @@ class JoystickController {
    */
   validate() {
     if (
-      window.__active_joysticks__ &&
-      window.__active_joysticks__.length > 0 &&
-      this.options.dynamicPosition
+      window[JOYSTICK_WINDOW_ACTIVE] &&
+      window[JOYSTICK_WINDOW_ACTIVE].length > 0 &&
+      window[JOYSTICK_WINDOW_ACTIVE].some((j) => j.options.dynamicPosition)
     ) {
-      throw new Error(
-        "You can't have multiple joysticks on the screen if there's a joystick with dynamic position."
+      console.warn(
+        "Multiple dynamicPosition joysticks is not supported for non-touch devices."
       );
     }
   }
@@ -185,14 +194,18 @@ class JoystickController {
    * @private
    */
   init() {
+    // Adding identifier array to window
+    if (!window[JOYSTICK_WINDOW_IDENTIFIER]) {
+      window[JOYSTICK_WINDOW_IDENTIFIER] = new Set();
+    }
     // ID
     this.id =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
 
     // Adding to active joysticks
-    window.__active_joysticks__ = Object.assign(
-      window.__active_joysticks__ || [],
+    window[JOYSTICK_WINDOW_ACTIVE] = Object.assign(
+      window[JOYSTICK_WINDOW_ACTIVE] || [],
       [this]
     );
 
@@ -311,6 +324,11 @@ class JoystickController {
    * @param {Event} e mousedown event
    */
   dynamicPositioningMouse = (e) => {
+    if (this.identifier !== null) return;
+    const identifier = e.x + "-" + e.y;
+    if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
+    this.identifier = identifier;
+    window[JOYSTICK_WINDOW_IDENTIFIER].add(this.identifier);
     const x = e.clientX;
     const y = e.clientY;
     this.container.style.left = x + "px";
@@ -319,7 +337,7 @@ class JoystickController {
     this.container.style.right = "unset";
     document.body.appendChild(this.container);
     this.recenterJoystick();
-    this.onStartEvent(e);
+    this.onStartEvent(e, false);
   };
 
   /**
@@ -329,18 +347,21 @@ class JoystickController {
    * @param {Event} event touchstart event
    */
   dynamicPositioningTouch = (event) => {
+    if (this.identifier !== null) return;
+    const identifier = event.changedTouches[0].identifier;
+    if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
+    this.identifier = identifier;
+    window[JOYSTICK_WINDOW_IDENTIFIER].add(identifier);
     // Current touch (for multi-touch)
     let touch;
-    if (event.touches.length > 1) {
-      for (let i = 0; i < event.touches.length; i++) {
-        const tc = event.touches.item(i);
-        if (tc.target === this.joystick) {
-          touch = tc;
-        }
+    for (let i = 0; i < event.touches.length; i++) {
+      const tc = event.touches.item(i);
+      if (this.identifier === tc.identifier) {
+        touch = tc;
+        break;
       }
-    } else {
-      touch = event.touches[0];
     }
+    if (!touch) return;
     const x = touch.clientX;
     const y = touch.clientY;
     this.container.style.left = x + "px";
@@ -349,7 +370,7 @@ class JoystickController {
     this.container.style.right = "unset";
     document.body.appendChild(this.container);
     this.recenterJoystick();
-    this.onStartEvent(event);
+    this.onStartEvent(event, false);
   };
 
   /**
@@ -357,6 +378,12 @@ class JoystickController {
    * @param {Event} e mousedown/touchend event
    */
   removeDynamicPositioning = (e) => {
+    if (e.type === "touchend") {
+      const identifier = e.changedTouches[0].identifier;
+      if (this.identifier !== identifier) return;
+    }
+    window[JOYSTICK_WINDOW_IDENTIFIER].delete(this.identifier)
+    this.identifier = null;
     this.onStopEvent(e);
     this.container.remove();
   };
@@ -460,11 +487,14 @@ class JoystickController {
    * @private
    * @param {Event} event
    */
-  onStartEvent = (event) => {
+  onStartEvent = (event, addIdentifier = true) => {
     this.started = true;
     if (event.type === "mousedown") {
       window.addEventListener("mousemove", this.onMouseEvent);
       window.addEventListener("mouseup", this.onStopEvent);
+    } else if (addIdentifier) {
+      const identifier = event.changedTouches[0].identifier;
+      this.identifier = identifier;
     }
     // style adjustment
     this.joystick.style.transition = this.JOYSTICK_TRANSITION;
@@ -481,6 +511,8 @@ class JoystickController {
     if (event.type === "mouseup") {
       window.removeEventListener("mousemove", this.onMouseEvent);
       window.removeEventListener("mouseup", this.onStopEvent);
+    } else {
+      this.identifier = null;
     }
     // style adjustment
     this.joystick.style.transition = "all 0.2s ease-in-out";
@@ -495,19 +527,17 @@ class JoystickController {
    * @param {Event} event touch move event
    */
   onTouchEvent = (event) => {
-    event.preventDefault();
     // Current touch (for multi-touch)
     let touch;
-    if (event.touches.length > 1) {
-      for (let i = 0; i < event.touches.length; i++) {
-        const tc = event.touches.item(i);
-        if (tc.target === this.joystick) {
-          touch = tc;
-        }
+    for (let i = 0; i < event.touches.length; i++) {
+      const tc = event.touches.item(i);
+      if (this.identifier === tc.identifier) {
+        touch = tc;
+        break;
       }
-    } else {
-      touch = event.touches[0];
     }
+    if (!touch) return;
+    event.preventDefault();
     // position of touch
     const x = touch.clientX;
     const y = touch.clientY;
