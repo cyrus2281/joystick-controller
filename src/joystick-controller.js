@@ -14,6 +14,10 @@
  * @property {string} x - x position of the joystick controller on screen (equal to left/right of css)
  * @property {string} y - y position of the joystick controller on screen (equal to bottom/top of css)
  * @property {boolean} distortion - if true, the joystick will be distorted when the dot is moved to the edge of the joystick
+ * @property {boolean} dynamicPositionTarget - Shows the joystick when the user touch/click on the screen at the position where it was clicked/touched
+ * @property {HTMLElement} dynamicPositionTarget - If dynamicPosition true, uses this target to set the event listener on (if not provided use document)
+ * @property {string|number} mouseClickButton - click button to show the joystick (if not provided, shows on all clicks)(Values: ALL, LEFT, MIDDLE, RIGHT, or button numbers (-1 to 4. -1 for all))
+ * @property {boolean} hideContextMenu - if true, hides the context menu on right click
  */
 
 /**
@@ -29,6 +33,13 @@
 
 const JOYSTICK_WINDOW_IDENTIFIER = "__joysticks_identifiers__";
 const JOYSTICK_WINDOW_ACTIVE = "__active_joysticks__";
+
+export const MOUSE_CLICK_BUTTONS = {
+  ALL: -1,
+  LEFT: 0,
+  MIDDLE: 1,
+  RIGHT: 2,
+};
 
 /**
  * A JavaScript library for creating a virtual joystick.
@@ -162,6 +173,12 @@ class JoystickController {
    * @type {number|string|null}
    */
   identifier = null;
+  /**
+   * Mouse button to listen on
+   * @private
+   * @type {number|string}
+   */
+  mouseButton = -1;
 
   /**
    * @param {JoystickOptions} options - Options for the joystick
@@ -301,6 +318,15 @@ class JoystickController {
   }
 
   addEventListeners = () => {
+    const mcb = this.options.mouseClickButton;
+    if (
+      (typeof mcb === "string" &&
+        Object.keys(MOUSE_CLICK_BUTTONS).includes(mcb)) ||
+      (typeof mcb === "number" && mcb < 6 && mcb > -2)
+    ) {
+      this.mouseButton =
+        typeof mcb === "string" ? MOUSE_CLICK_BUTTONS[mcb] : mcb;
+    }
     if (this.options.dynamicPosition) {
       const target = this.options.dynamicPositionTarget || document;
       // mouse events Listeners
@@ -312,6 +338,10 @@ class JoystickController {
         passive: false,
       });
       document.addEventListener("touchend", this.removeDynamicPositioning);
+      if (this.options.hideContextMenu) {
+        target.addEventListener("contextmenu", (e) => e.preventDefault());
+        this.joystick.addEventListener("contextmenu", (e) => e.preventDefault());
+      }
     } else {
       // touch events Listeners
       this.joystick.addEventListener("touchstart", this.onStartEvent);
@@ -319,6 +349,10 @@ class JoystickController {
       this.joystick.addEventListener("touchend", this.onStopEvent);
       // mouse events Listeners
       this.joystick.addEventListener("mousedown", this.onStartEvent);
+      if (this.options.hideContextMenu) {
+        this.container.addEventListener("contextmenu", (e) => e.preventDefault());
+        this.joystick.addEventListener("contextmenu", (e) => e.preventDefault());
+      }
     }
     // window resize listener
     window.addEventListener("resize", this.recenterJoystick);
@@ -332,6 +366,7 @@ class JoystickController {
    */
   dynamicPositioningMouse = (e) => {
     if (this.identifier !== null) return;
+    if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
     const identifier = e.x + "-" + e.y;
     if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
     this.identifier = identifier;
@@ -387,6 +422,7 @@ class JoystickController {
    */
   removeDynamicPositioning = (e) => {
     if (this.identifier === null) return;
+    if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
     if (e.type === "touchend") {
       const identifier = e.changedTouches[0].identifier;
       if (this.identifier !== identifier) return;
@@ -497,6 +533,7 @@ class JoystickController {
    * @param {Event} event
    */
   onStartEvent = (event, addIdentifier = true) => {
+    if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
     this.started = true;
     if (event.type === "mousedown") {
       window.addEventListener("mousemove", this.onMouseEvent);
@@ -516,6 +553,7 @@ class JoystickController {
    * @param {Event} event leave joystick event
    */
   onStopEvent = (event) => {
+    if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
     this.started = false;
     if (event.type === "mouseup") {
       window.removeEventListener("mousemove", this.onMouseEvent);
@@ -613,10 +651,9 @@ class JoystickController {
 
     // removing from active joysticks
     if (Array.isArray(window[JOYSTICK_WINDOW_ACTIVE]))
-      window[JOYSTICK_WINDOW_ACTIVE] =
-        window[JOYSTICK_WINDOW_ACTIVE].filter(
-          (joystick) => joystick !== this
-        );
+      window[JOYSTICK_WINDOW_ACTIVE] = window[JOYSTICK_WINDOW_ACTIVE].filter(
+        (joystick) => joystick !== this
+      );
   }
 }
 

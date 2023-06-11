@@ -123,6 +123,8 @@
                 joystickRadius: 40,
                 joystickClass: "joystick",
                 distortion: false,
+                mouseClickButton: "ALL",
+                hideContextMenu: true,
             },
             (data) => {
                 x.innerHTML = data.x;
@@ -143,6 +145,8 @@
                 maxRange: 100,
                 joystickClass: "joystick",
                 distortion: true,
+                mouseClickButton: "LEFT",
+                hideContextMenu: false,
             },
             (data) => {
                 x2.innerHTML = data.x;
