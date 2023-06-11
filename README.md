@@ -1,7 +1,8 @@
 # Joystick Controller
 
 ![npm](https://img.shields.io/npm/v/joystick-controller)
-![GitHub](https://img.shields.io/github/license/cyrus2281/joystick-controller)
+![GitHub](https://img.shields.io/github/package-json/v/cyrus2281/joystick-controller?color=red&label=Github)
+![License](https://img.shields.io/github/license/cyrus2281/joystick-controller)
 
 ![joystick-controller](https://raw.githubusercontent.com/cyrus2281/joystick-controller/main/example/joystick-controller.gif)
 
@@ -11,7 +12,7 @@ A fully customizable JavaScript virtual joystick controller for both desktop and
 
 ## Installation
 
-```
+```bash
 npm install joystick-controller
 ```
 
@@ -45,6 +46,7 @@ You can pass a set of options as the first argument to further customize your jo
 | y               | string  | '50%'   | y position of the joystick controller on screen (equal to bottom/top of css)(ignored if dynamicPosition=true)|
 | distortion      | boolean | false   | if true, the joystick will be distorted when the dot is moved to the edge of the joystick |
 | dynamicPosition       | boolean  | false     | Shows the joystick when the user touch/click on the screen at the position where it was clicked/touched|
+| dynamicPositionTarget       | HTMLElement  | null     | If dynamicPosition true, uses this target to set the event listener on (if not provided use document) |
 
 ## Callback Arguments
 
@@ -63,7 +65,8 @@ Joystick would trigger the callback on each move event. The following arguments 
 All the options are optional, but a customized instance would look like this:
 
 ```js
-const joystick = new JoystickController(
+// Static Example
+const staticJoystick = new JoystickController(
   {
     maxRange: 70,
     level: 10,
@@ -78,6 +81,24 @@ const joystick = new JoystickController(
     distortion: true,
     x: "25%",
     y: "25%",
+  },
+  ({ x, y, leveledX, leveledY, distance, angle }) =>
+    console.log(x, y, leveledX, leveledY, distance, angle)
+);
+// Dynamic Position Example
+const dynamicJoystick = new JoystickController(
+  {
+    maxRange: 70,
+    level: 10,
+    radius: 50,
+    joystickRadius: 30,
+    opacity: 0.5,
+    containerClass: "joystick-container",
+    controllerClass: "joystick-controller",
+    joystickClass: "joystick",
+    distortion: true,
+    dynamicPosition: true,
+    dynamicPositionTarget: document.getElementById("root"),
   },
   ({ x, y, leveledX, leveledY, distance, angle }) =>
     console.log(x, y, leveledX, leveledY, distance, angle)
