@@ -63,6 +63,7 @@ class JoystickController {
     y: "50%",
     distortion: false,
     dynamicPosition: false,
+    dynamicPositionTarget: null,
   };
 
   /**
@@ -181,10 +182,15 @@ class JoystickController {
     if (
       window[JOYSTICK_WINDOW_ACTIVE] &&
       window[JOYSTICK_WINDOW_ACTIVE].length > 0 &&
-      window[JOYSTICK_WINDOW_ACTIVE].some((j) => j.options.dynamicPosition)
+      window[JOYSTICK_WINDOW_ACTIVE].some(
+        (j) =>
+          j.options.dynamicPosition &&
+          (j.options.dynamicPositionTarget || document) ===
+            (this.options.dynamicPositionTarget || document)
+      )
     ) {
-      console.warn(
-        "Multiple dynamicPosition joysticks is not supported for non-touch devices."
+      console.error(
+        "Multiple dynamicPosition should be used with different target elements (dynamicPositionTarget) to prevent event collision."
       );
     }
   }
@@ -296,11 +302,12 @@ class JoystickController {
 
   addEventListeners = () => {
     if (this.options.dynamicPosition) {
+      const target = this.options.dynamicPositionTarget || document;
       // mouse events Listeners
-      document.addEventListener("mousedown", this.dynamicPositioningMouse);
+      target.addEventListener("mousedown", this.dynamicPositioningMouse);
       document.addEventListener("mouseup", this.removeDynamicPositioning);
       // touch events Listeners
-      document.addEventListener("touchstart", this.dynamicPositioningTouch);
+      target.addEventListener("touchstart", this.dynamicPositioningTouch);
       document.addEventListener("touchmove", this.onTouchEvent, {
         passive: false,
       });
@@ -347,6 +354,7 @@ class JoystickController {
    * @param {Event} event touchstart event
    */
   dynamicPositioningTouch = (event) => {
+    // event.preventDefault();
     if (this.identifier !== null) return;
     const identifier = event.changedTouches[0].identifier;
     if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
@@ -378,11 +386,12 @@ class JoystickController {
    * @param {Event} e mousedown/touchend event
    */
   removeDynamicPositioning = (e) => {
+    if (this.identifier === null) return;
     if (e.type === "touchend") {
       const identifier = e.changedTouches[0].identifier;
       if (this.identifier !== identifier) return;
     }
-    window[JOYSTICK_WINDOW_IDENTIFIER].delete(this.identifier)
+    window[JOYSTICK_WINDOW_IDENTIFIER].delete(this.identifier);
     this.identifier = null;
     this.onStopEvent(e);
     this.container.remove();
@@ -578,11 +587,12 @@ class JoystickController {
   destroy() {
     // removing event listeners
     if (this.options.dynamicPosition) {
+      const target = this.options.dynamicPositionTarget || document;
       // mouse events Listeners
-      document.removeEventListener("mousedown", this.dynamicPositioningMouse);
+      target.removeEventListener("mousedown", this.dynamicPositioningMouse);
       document.removeEventListener("mouseup", this.removeDynamicPositioning);
       // touch events Listeners
-      document.removeEventListener("touchstart", this.dynamicPositioningTouch);
+      target.removeEventListener("touchstart", this.dynamicPositioningTouch);
       document.removeEventListener("touchmove", this.onTouchEvent, {
         passive: false,
       });
@@ -598,13 +608,13 @@ class JoystickController {
     window.removeEventListener("resize", this.recenterJoystick);
 
     // removing elements
-    document.head.removeChild(this.style);
-    document.body.removeChild(this.container);
+    this.style.remove();
+    this.container.remove();
 
     // removing from active joysticks
-    if (Array.isArray(window.__active_dynamic_joystick__))
-      window.__active_dynamic_joystick__ =
-        window.__active_dynamic_joystick__.filter(
+    if (Array.isArray(window[JOYSTICK_WINDOW_ACTIVE]))
+      window[JOYSTICK_WINDOW_ACTIVE] =
+        window[JOYSTICK_WINDOW_ACTIVE].filter(
           (joystick) => joystick !== this
         );
   }
