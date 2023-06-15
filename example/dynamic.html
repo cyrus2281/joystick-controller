@@ -68,11 +68,13 @@
             z-index: 100;
             display: flex;
         }
+
         #panel-left {
             width: 50%;
             height: 100%;
             background-color: #ff8d8d;
         }
+
         #panel-right {
             width: 50%;
             height: 100%;
@@ -147,6 +149,8 @@
                 distortion: false,
                 dynamicPosition: true,
                 dynamicPositionTarget: document.querySelector("#panel-left"),
+                mouseClickButton: "ALL",
+                hideContextMenu: true,
             },
             (data) => {
                 x.innerHTML = data.x;
@@ -166,6 +170,8 @@
                 distortion: true,
                 dynamicPosition: true,
                 dynamicPositionTarget: document.querySelector("#panel-right"),
+                mouseClickButton: "LEFT",
+                hideContextMenu: false,
             },
             (data) => {
                 x2.innerHTML = data.x;
