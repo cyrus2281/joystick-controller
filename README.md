@@ -20,7 +20,7 @@ npm install joystick-controller
 ```js
 import JoystickController from "joystick-controller";
 
-const joystick = new JoystickController({}, (date) => console.log(data));
+const joystick = new JoystickController({}, (data) => console.log(data));
 ```
 
 The import example here is module style import. JoystickController also supports global and commonJs import style.

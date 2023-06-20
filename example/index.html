@@ -85,6 +85,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"
         integrity="sha512-TBsRPqWeusJljmmEij9waZ9K+qO2m6W1pu+5h5BjxvdizD1Izn1wwJyVYNFFFH42tIfedURxTsgtXF2Lah2PXA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        // Extracting the default export from the module
+        JoystickController = JoystickController.default
+    </script>
     <script type="module">
         // uncomment for dev. (the CDN uses the global import, no need for module import)
         // import JoystickController from '../src/joystick-controller.js';
