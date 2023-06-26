@@ -340,7 +340,9 @@ class JoystickController {
       document.addEventListener("touchend", this.removeDynamicPositioning);
       if (this.options.hideContextMenu) {
         target.addEventListener("contextmenu", (e) => e.preventDefault());
-        this.joystick.addEventListener("contextmenu", (e) => e.preventDefault());
+        this.joystick.addEventListener("contextmenu", (e) =>
+          e.preventDefault()
+        );
       }
     } else {
       // touch events Listeners
@@ -350,8 +352,12 @@ class JoystickController {
       // mouse events Listeners
       this.joystick.addEventListener("mousedown", this.onStartEvent);
       if (this.options.hideContextMenu) {
-        this.container.addEventListener("contextmenu", (e) => e.preventDefault());
-        this.joystick.addEventListener("contextmenu", (e) => e.preventDefault());
+        this.container.addEventListener("contextmenu", (e) =>
+          e.preventDefault()
+        );
+        this.joystick.addEventListener("contextmenu", (e) =>
+          e.preventDefault()
+        );
       }
     }
     // window resize listener
@@ -422,11 +428,10 @@ class JoystickController {
    */
   removeDynamicPositioning = (e) => {
     if (this.identifier === null) return;
-    if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
     if (e.type === "touchend") {
       const identifier = e.changedTouches[0].identifier;
       if (this.identifier !== identifier) return;
-    }
+    } else if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
     window[JOYSTICK_WINDOW_IDENTIFIER].delete(this.identifier);
     this.identifier = null;
     this.onStopEvent(e);
@@ -533,15 +538,15 @@ class JoystickController {
    * @param {Event} event
    */
   onStartEvent = (event, addIdentifier = true) => {
-    if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
-    this.started = true;
     if (event.type === "mousedown") {
+      if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
       window.addEventListener("mousemove", this.onMouseEvent);
       window.addEventListener("mouseup", this.onStopEvent);
     } else if (addIdentifier) {
       const identifier = event.changedTouches[0].identifier;
       this.identifier = identifier;
     }
+    this.started = true;
     // style adjustment
     this.joystick.style.transition = this.JOYSTICK_TRANSITION;
     this.joystick.style.cursor = "grabbing";
@@ -553,14 +558,14 @@ class JoystickController {
    * @param {Event} event leave joystick event
    */
   onStopEvent = (event) => {
-    if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
-    this.started = false;
     if (event.type === "mouseup") {
+      if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
       window.removeEventListener("mousemove", this.onMouseEvent);
       window.removeEventListener("mouseup", this.onStopEvent);
     } else {
       this.identifier = null;
     }
+    this.started = false;
     // style adjustment
     this.joystick.style.transition = "all 0.2s ease-in-out";
     this.joystick.style.cursor = "grab";
