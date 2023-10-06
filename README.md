@@ -3,6 +3,7 @@
 ![npm](https://img.shields.io/npm/v/joystick-controller)
 ![GitHub](https://img.shields.io/github/package-json/v/cyrus2281/joystick-controller?color=red&label=Github)
 ![License](https://img.shields.io/github/license/cyrus2281/joystick-controller)
+[![buyMeACoffee](https://img.shields.io/badge/BuyMeACoffee-cyrus2281-yellow?logo=buymeacoffee)](https://www.buymeacoffee.com/cyrus2281)
 
 ![joystick-controller](https://raw.githubusercontent.com/cyrus2281/joystick-controller/main/example/joystick-controller.gif)
 
