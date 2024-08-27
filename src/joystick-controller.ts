@@ -16,7 +16,7 @@ declare global {
 /**
  * Options for the joystick
  */
-interface JoystickOptions {
+interface JoystickConfig {
   /**
    * Maximum range of the joystick dot (number of pixels).
    */
@@ -107,7 +107,7 @@ interface JoystickOptions {
 /**
  * Joystick onMove Callback
  */
-interface JoystickOnMove {
+export interface JoystickOnMove {
   /**
    * x position of the joystick relative to the center of it.
    */
@@ -139,6 +139,8 @@ interface JoystickOnMove {
   distance: number;
 }
 
+export type JoystickOptions = Partial<JoystickConfig>;
+
 // Mouse click buttons constants
 export const MOUSE_CLICK_BUTTONS = {
   ALL: -1,
@@ -152,7 +154,7 @@ type MouseClickButton = keyof typeof MOUSE_CLICK_BUTTONS | number;
 /**
  * A JavaScript library for creating a virtual joystick.
  * @author Cyrus Mobini
- * @version 1.1.0
+ * @version 1.1.1
  * @docs https://github.com/cyrus2281/joystick-controller#readme
  */
 class JoystickController {
@@ -164,7 +166,7 @@ class JoystickController {
   /**
    * Default options for the joystick
    */
-  private options: JoystickOptions = {
+  private options: JoystickConfig = {
     maxRange: 100,
     level: 10,
     radius: 50,
