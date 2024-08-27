@@ -1,316 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic Positioning JoyStick Example</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+      }
 
-        html,
-        body {
-            overflow: hidden;
-        }
+      html,
+      body {
+        overflow: hidden;
+      }
 
-        .world {
-            position: fixed;
-            top: 0;
-            left: 0;
-            outline: none;
-        }
+      .world {
+        position: fixed;
+        top: 0;
+        left: 0;
+        outline: none;
+      }
 
-        .info {
-            position: absolute;
-            z-index: 9999;
-            background-color: #e3e3e3;
-            padding: 10px;
-            border-radius: 5px;
-            top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: smaller;
-            user-select: none;
-            pointer-events: none;
-        }
+      .info {
+        position: absolute;
+        z-index: 9999;
+        background-color: #e3e3e3;
+        padding: 10px;
+        border-radius: 5px;
+        top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: smaller;
+        user-select: none;
+        pointer-events: none;
+      }
 
-        .right {
-            right: 10px;
-        }
+      .right {
+        right: 10px;
+      }
 
-        .left {
-            left: 10px;
-        }
+      .left {
+        left: 10px;
+      }
 
-        .link {
-            position: absolute;
-            bottom: 10px;
-            right: 50%;
-            transform: translateX(50%);
-            color: #8a1c09;
-            font-weight: bold;
-            width: 100%;
-            text-align: center;
-            z-index: 9999;
-        }
+      .link {
+        position: absolute;
+        bottom: 10px;
+        right: 50%;
+        transform: translateX(50%);
+        color: #8a1c09;
+        font-weight: bold;
+        width: 100%;
+        text-align: center;
+        z-index: 9999;
+      }
 
-        .panel {
-            position: absolute;
-            opacity: 0.2;
-            width: 100%;
-            height: 100%;
-            z-index: 100;
-            display: flex;
-        }
+      .panel {
+        position: absolute;
+        opacity: 0.2;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        display: flex;
+      }
 
-        #panel-left {
-            width: 50%;
-            height: 100%;
-            background-color: #ff8d8d;
-        }
+      #panel-left {
+        width: 50%;
+        height: 100%;
+        background-color: #ff8d8d;
+      }
 
-        #panel-right {
-            width: 50%;
-            height: 100%;
-            background-color: #8181ff;
-        }
+      #panel-right {
+        width: 50%;
+        height: 100%;
+        background-color: #8181ff;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <canvas class="world"></canvas>
     <a href="index.html" class="link">Click for Dual JoyStick Example</a>
     <div class="info left">
-        <p>X: <span id="x"></span></p>
-        <p>Y: <span id="y"></span></p>
-        <p>X Leveled: <span id="xLeveled"></span></p>
-        <p>Y Leveled: <span id="yLeveled"></span></p>
-        <p>Distance: <span id="distance"></span></p>
-        <p>Angle: <span id="angle"></span></p>
+      <p>X: <span id="x"></span></p>
+      <p>Y: <span id="y"></span></p>
+      <p>X Leveled: <span id="xLeveled"></span></p>
+      <p>Y Leveled: <span id="yLeveled"></span></p>
+      <p>Distance: <span id="distance"></span></p>
+      <p>Angle: <span id="angle"></span></p>
     </div>
     <div class="info right">
-        <p>X: <span id="x2"></span></p>
-        <p>Y: <span id="y2"></span></p>
-        <p>X Leveled: <span id="xLeveled2"></span></p>
-        <p>Y Leveled: <span id="yLeveled2"></span></p>
-        <p>Distance: <span id="distance2"></span></p>
-        <p>Angle: <span id="angle2"></span></p>
+      <p>X: <span id="x2"></span></p>
+      <p>Y: <span id="y2"></span></p>
+      <p>X Leveled: <span id="xLeveled2"></span></p>
+      <p>Y Leveled: <span id="yLeveled2"></span></p>
+      <p>Distance: <span id="distance2"></span></p>
+      <p>Angle: <span id="angle2"></span></p>
     </div>
     <div class="panel">
-        <div id="panel-left"></div>
-        <div id="panel-right"></div>
+      <div id="panel-left"></div>
+      <div id="panel-right"></div>
     </div>
-    <script src="https://cdn.statically.io/gh/cyrus2281/joystick-controller/main/dist/umd/joystick-controller.min.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"
-        integrity="sha512-TBsRPqWeusJljmmEij9waZ9K+qO2m6W1pu+5h5BjxvdizD1Izn1wwJyVYNFFFH42tIfedURxTsgtXF2Lah2PXA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.statically.io/gh/cyrus2281/joystick-controller/main/dist/umd/joystick-controller.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"
+      integrity="sha512-TBsRPqWeusJljmmEij9waZ9K+qO2m6W1pu+5h5BjxvdizD1Izn1wwJyVYNFFFH42tIfedURxTsgtXF2Lah2PXA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
     <script>
-        // Extracting the default export from the module
-        JoystickController = JoystickController.default
+      // Extracting the default export from the module
+      JoystickController = JoystickController.default;
     </script>
     <script type="module">
-        // uncomment for dev. (the CDN uses the global import, no need for module import)
-        // import JoystickController from '../src/joystick-controller.js';
+      // uncomment for dev. (the CDN uses the global import, no need for module import)
+      // import JoystickController from '../dist/es/joystick-controller.js';
 
-        const x = document.querySelector("#x");
-        const y = document.querySelector("#y");
-        const xLeveled = document.querySelector("#xLeveled");
-        const yLeveled = document.querySelector("#yLeveled");
-        const distance = document.querySelector("#distance");
-        const angle = document.querySelector("#angle");
+      const x = document.querySelector("#x");
+      const y = document.querySelector("#y");
+      const xLeveled = document.querySelector("#xLeveled");
+      const yLeveled = document.querySelector("#yLeveled");
+      const distance = document.querySelector("#distance");
+      const angle = document.querySelector("#angle");
 
-        const x2 = document.querySelector("#x2");
-        const y2 = document.querySelector("#y2");
-        const xLeveled2 = document.querySelector("#xLeveled2");
-        const yLeveled2 = document.querySelector("#yLeveled2");
-        const distance2 = document.querySelector("#distance2");
-        const angle2 = document.querySelector("#angle2");
+      const x2 = document.querySelector("#x2");
+      const y2 = document.querySelector("#y2");
+      const xLeveled2 = document.querySelector("#xLeveled2");
+      const yLeveled2 = document.querySelector("#yLeveled2");
+      const distance2 = document.querySelector("#distance2");
+      const angle2 = document.querySelector("#angle2");
 
-        window.joystickHandlers = {
-            leftJoystickHandler: {
-                x: 0,
-                y: 0
-            },
-            rightJoystickHandler: {
-                x: 0,
-                y: 0
-            },
+      window.joystickHandlers = {
+        leftJoystickHandler: {
+          x: 0,
+          y: 0,
+        },
+        rightJoystickHandler: {
+          x: 0,
+          y: 0,
+        },
+      };
+
+      const leftJoystick = new JoystickController(
+        {
+          opacity: 0.5,
+          maxRange: 80,
+          radius: 70,
+          joystickRadius: 40,
+          joystickClass: "joystick",
+          distortion: false,
+          dynamicPosition: true,
+          dynamicPositionTarget: document.querySelector("#panel-left"),
+          mouseClickButton: "ALL",
+          hideContextMenu: true,
+        },
+        (data) => {
+          x.innerHTML = data.x;
+          y.innerHTML = data.y;
+          xLeveled.innerHTML = data.leveledX;
+          yLeveled.innerHTML = data.leveledY;
+          distance.innerHTML = data.distance;
+          angle.innerHTML = data.angle;
+          window.joystickHandlers.leftJoystickHandler.x = data.leveledX;
+          window.joystickHandlers.leftJoystickHandler.y = data.leveledY;
         }
-
-        const leftJoystick = new JoystickController({
-                opacity: 0.5,
-                maxRange: 80,
-                radius: 70,
-                joystickRadius: 40,
-                joystickClass: "joystick",
-                distortion: false,
-                dynamicPosition: true,
-                dynamicPositionTarget: document.querySelector("#panel-left"),
-                mouseClickButton: "ALL",
-                hideContextMenu: true,
-            },
-            (data) => {
-                x.innerHTML = data.x;
-                y.innerHTML = data.y;
-                xLeveled.innerHTML = data.leveledX;
-                yLeveled.innerHTML = data.leveledY;
-                distance.innerHTML = data.distance;
-                angle.innerHTML = data.angle;
-                window.joystickHandlers.leftJoystickHandler.x = data.leveledX
-                window.joystickHandlers.leftJoystickHandler.y = data.leveledY
-            }
-        );
-        const rightJoystick = new JoystickController({
-                opacity: 0.5,
-                maxRange: 100,
-                joystickClass: "joystick",
-                distortion: true,
-                dynamicPosition: true,
-                dynamicPositionTarget: document.querySelector("#panel-right"),
-                mouseClickButton: "LEFT",
-                hideContextMenu: false,
-            },
-            (data) => {
-                x2.innerHTML = data.x;
-                y2.innerHTML = data.y;
-                xLeveled2.innerHTML = data.leveledX;
-                yLeveled2.innerHTML = data.leveledY;
-                distance2.innerHTML = data.distance;
-                angle2.innerHTML = data.angle;
-                window.joystickHandlers.rightJoystickHandler.x = data.leveledX
-                window.joystickHandlers.rightJoystickHandler.y = data.leveledY
-            }
-        );
+      );
+      const rightJoystick = new JoystickController(
+        {
+          opacity: 0.5,
+          maxRange: 100,
+          joystickClass: "joystick",
+          distortion: true,
+          dynamicPosition: true,
+          dynamicPositionTarget: document.querySelector("#panel-right"),
+          mouseClickButton: "LEFT",
+          hideContextMenu: false,
+        },
+        (data) => {
+          x2.innerHTML = data.x;
+          y2.innerHTML = data.y;
+          xLeveled2.innerHTML = data.leveledX;
+          yLeveled2.innerHTML = data.leveledY;
+          distance2.innerHTML = data.distance;
+          angle2.innerHTML = data.angle;
+          window.joystickHandlers.rightJoystickHandler.x = data.leveledX;
+          window.joystickHandlers.rightJoystickHandler.y = data.leveledY;
+        }
+      );
     </script>
     <script type="module">
-        import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.module.min.js";
-        // Canvas
-        const canvas = document.querySelector("canvas.world");
-        // Scene
-        const scene = new THREE.Scene();
-        /**
-         *  Material
-         */
-        const material = new THREE.MeshNormalMaterial()
-        /**
-         * Meshes
-         */
-        const planeGeometry = new THREE.PlaneGeometry(15,15)
-        const plane = new THREE.Mesh(planeGeometry, material);
-        plane.rotation.x = -Math.PI / 2;
-        plane.position.y = -0.5;
-        scene.add(plane)
+      import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.module.min.js";
+      // Canvas
+      const canvas = document.querySelector("canvas.world");
+      // Scene
+      const scene = new THREE.Scene();
+      /**
+       *  Material
+       */
+      const material = new THREE.MeshNormalMaterial();
+      /**
+       * Meshes
+       */
+      const planeGeometry = new THREE.PlaneGeometry(15, 15);
+      const plane = new THREE.Mesh(planeGeometry, material);
+      plane.rotation.x = -Math.PI / 2;
+      plane.position.y = -0.5;
+      scene.add(plane);
 
-        const offset = 8
-        const boxGeometry = new THREE.BoxGeometry(17,1,1,1)
-        const wall1 = new THREE.Mesh(boxGeometry,material);
-        wall1.position.x = -offset;
-        wall1.rotation.y = Math.PI / 2;
-        const wall2 = new THREE.Mesh(boxGeometry,material);
-        wall2.position.z = -offset;
-        const wall3 = new THREE.Mesh(boxGeometry,material);
-        wall3.position.x = offset;
-        wall3.rotation.y = Math.PI / 2;
-        const wall4 = new THREE.Mesh(boxGeometry,material);
-        wall4.position.z = offset
-        scene.add(wall1, wall2, wall3, wall4)
+      const offset = 8;
+      const boxGeometry = new THREE.BoxGeometry(17, 1, 1, 1);
+      const wall1 = new THREE.Mesh(boxGeometry, material);
+      wall1.position.x = -offset;
+      wall1.rotation.y = Math.PI / 2;
+      const wall2 = new THREE.Mesh(boxGeometry, material);
+      wall2.position.z = -offset;
+      const wall3 = new THREE.Mesh(boxGeometry, material);
+      wall3.position.x = offset;
+      wall3.rotation.y = Math.PI / 2;
+      const wall4 = new THREE.Mesh(boxGeometry, material);
+      wall4.position.z = offset;
+      scene.add(wall1, wall2, wall3, wall4);
 
-        const sphereGeometry = new THREE.SphereGeometry()
-        const sphere = new THREE.Mesh(sphereGeometry, material)
-        sphere.position.y = 0.5;
-        sphere.position.x = 3.5;
-        sphere.position.z = 1.5;
-        const sphere2 = new THREE.Mesh(sphereGeometry, material)
-        sphere2.position.y = 1;
-        sphere2.position.x = -3.5;
-        sphere2.position.z = -4.5;
-        sphere2.scale.set(1.5, 1.5, 1.5)
-        scene.add(sphere, sphere2)
+      const sphereGeometry = new THREE.SphereGeometry();
+      const sphere = new THREE.Mesh(sphereGeometry, material);
+      sphere.position.y = 0.5;
+      sphere.position.x = 3.5;
+      sphere.position.z = 1.5;
+      const sphere2 = new THREE.Mesh(sphereGeometry, material);
+      sphere2.position.y = 1;
+      sphere2.position.x = -3.5;
+      sphere2.position.z = -4.5;
+      sphere2.scale.set(1.5, 1.5, 1.5);
+      scene.add(sphere, sphere2);
 
-        const sizes = {
-            width: window.innerWidth,
-            height: window.innerHeight,
-        };
+      const sizes = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
 
-        window.addEventListener("resize", () => {
-            // Update sizes
-            sizes.width = window.innerWidth;
-            sizes.height = window.innerHeight;
-            // Update camera
-            camera.aspect = sizes.width / sizes.height;
-            camera.updateProjectionMatrix();
-            // Update renderer
-            renderer.setSize(sizes.width, sizes.height);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-            camera.position.set(35 - sizes.width / 100, 35 - sizes.width / 100, 5);
-            camera.lookAt(new THREE.Vector3(0,0,0))
-        });
-        /**
-         * Camera
-         */
-        const camera = new THREE.PerspectiveCamera(
-            50,
-            sizes.width / sizes.height,
-            0.1,
-            200
-        );
-        camera.position.set(35 - sizes.width / 100, 35 - sizes.width / 100, 2);
-        camera.lookAt(new THREE.Vector3(0,0,0))
-        scene.add(camera);
-        /**
-         * Renderer
-         */
-        const renderer = new THREE.WebGLRenderer({
-            canvas: canvas,
-        });
+      window.addEventListener("resize", () => {
+        // Update sizes
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
+        // Update camera
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+        // Update renderer
         renderer.setSize(sizes.width, sizes.height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(new THREE.Color(0x2255cc))
-        /**
-         * Animate
-         */
-        const sphereLimit = 6.5
-        const sphere2Limit = 6
-        const clock = new THREE.Clock();
-        const tick = () => {
-            const elapsedTime = clock.getElapsedTime();
-            // Update Spheres base on Joystick
-            const sphereX = sphere.position.x - joystickHandlers.rightJoystickHandler.y / 100
-            const sphereY = sphere.position.z - joystickHandlers.rightJoystickHandler.x / 100
-            const sphere2X = sphere2.position.x - joystickHandlers.leftJoystickHandler.y / 100;
-            const sphere2Y = sphere2.position.z - joystickHandlers.leftJoystickHandler.x / 100;
-            const distanceX = (new THREE.Vector2(sphereX, sphere.position.z))
-                .distanceTo(new THREE.Vector2(sphere2X,sphere2.position.z))
-            const distanceY = (new THREE.Vector2(sphere.position.x, sphereY))
-                .distanceTo(new THREE.Vector2(sphere2.position.x,sphere2Y))
-            if (-sphereLimit < sphereX && sphereX < sphereLimit && distanceX > 2.3) {
-                sphere.position.x = sphereX
-            }
-            if (-sphereLimit < sphereY && sphereY < sphereLimit && distanceY > 2.3) {
-                sphere.position.z = sphereY
-            }
-            // Sphere 2
-            if (-sphere2Limit < sphere2X && sphere2X < sphere2Limit && distanceX > 2.3) {
-                sphere2.position.x = sphere2X
-            }
-            if (-sphere2Limit < sphere2Y && sphere2Y < sphere2Limit && distanceY > 2.3) {
-                sphere2.position.z = sphere2Y
-            }
-            // Render
-            renderer.render(scene, camera);
-            // Call tick again on the next frame
-            window.requestAnimationFrame(tick);
-        };
-        tick();
-    </script>
-</body>
 
+        camera.position.set(35 - sizes.width / 100, 35 - sizes.width / 100, 5);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+      });
+      /**
+       * Camera
+       */
+      const camera = new THREE.PerspectiveCamera(
+        50,
+        sizes.width / sizes.height,
+        0.1,
+        200
+      );
+      camera.position.set(35 - sizes.width / 100, 35 - sizes.width / 100, 2);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      scene.add(camera);
+      /**
+       * Renderer
+       */
+      const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+      });
+      renderer.setSize(sizes.width, sizes.height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(new THREE.Color(0x2255cc));
+      /**
+       * Animate
+       */
+      const sphereLimit = 6.5;
+      const sphere2Limit = 6;
+      const clock = new THREE.Clock();
+      const tick = () => {
+        const elapsedTime = clock.getElapsedTime();
+        // Update Spheres base on Joystick
+        const sphereX =
+          sphere.position.x - joystickHandlers.rightJoystickHandler.y / 100;
+        const sphereY =
+          sphere.position.z - joystickHandlers.rightJoystickHandler.x / 100;
+        const sphere2X =
+          sphere2.position.x - joystickHandlers.leftJoystickHandler.y / 100;
+        const sphere2Y =
+          sphere2.position.z - joystickHandlers.leftJoystickHandler.x / 100;
+        const distanceX = new THREE.Vector2(
+          sphereX,
+          sphere.position.z
+        ).distanceTo(new THREE.Vector2(sphere2X, sphere2.position.z));
+        const distanceY = new THREE.Vector2(
+          sphere.position.x,
+          sphereY
+        ).distanceTo(new THREE.Vector2(sphere2.position.x, sphere2Y));
+        if (
+          -sphereLimit < sphereX &&
+          sphereX < sphereLimit &&
+          distanceX > 2.3
+        ) {
+          sphere.position.x = sphereX;
+        }
+        if (
+          -sphereLimit < sphereY &&
+          sphereY < sphereLimit &&
+          distanceY > 2.3
+        ) {
+          sphere.position.z = sphereY;
+        }
+        // Sphere 2
+        if (
+          -sphere2Limit < sphere2X &&
+          sphere2X < sphere2Limit &&
+          distanceX > 2.3
+        ) {
+          sphere2.position.x = sphere2X;
+        }
+        if (
+          -sphere2Limit < sphere2Y &&
+          sphere2Y < sphere2Limit &&
+          distanceY > 2.3
+        ) {
+          sphere2.position.z = sphere2Y;
+        }
+        // Render
+        renderer.render(scene, camera);
+        // Call tick again on the next frame
+        window.requestAnimationFrame(tick);
+      };
+      tick();
+    </script>
+  </body>
 </html>
