@@ -1,8 +1,8 @@
 # Joystick Controller
 
-![npm](https://img.shields.io/npm/v/joystick-controller)
-![GitHub](https://img.shields.io/github/package-json/v/cyrus2281/joystick-controller?color=red&label=Github)
-![License](https://img.shields.io/github/license/cyrus2281/joystick-controller)
+[![npm](https://img.shields.io/npm/v/joystick-controller)](https://www.npmjs.com/package/joystick-controller)
+[![GitHub](https://img.shields.io/github/package-json/v/cyrus2281/joystick-controller?color=red&label=Github)](https://github.com/cyrus2281/joystick-controller)
+[![License](https://img.shields.io/github/license/cyrus2281/joystick-controller)](https://github.com/cyrus2281/joystick-controller/blob/main/LICENSE)
 [![buyMeACoffee](https://img.shields.io/badge/BuyMeACoffee-cyrus2281-yellow?logo=buymeacoffee)](https://www.buymeacoffee.com/cyrus2281)
 
 ![joystick-controller](https://raw.githubusercontent.com/cyrus2281/joystick-controller/main/example/joystick-controller.gif)
@@ -121,6 +121,6 @@ joystick.destroy();
 
 ---
 
-Copyright(c) Cyrus Mobini 2023
+Copyright(c) Cyrus Mobini 2024
 
 License MIT

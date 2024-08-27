@@ -105,4 +105,8 @@ typings/
 # Distribution
 dist/es
 dist/lib
-dist/umd/joystick-controller.js
+dist/ts
+dist/umd/*
+
+# Except this specific file
+!dist/umd/joystick-controller.min.js

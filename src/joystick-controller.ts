@@ -1,65 +1,172 @@
+// Joystick window identifier
+const JOYSTICK_WINDOW_IDENTIFIER = "__joysticks_identifiers__";
+// Active joystick window
+const JOYSTICK_WINDOW_ACTIVE = "__active_joysticks__";
+
+/**
+ * Declaring global window types
+ */
+declare global {
+  interface Window {
+    [JOYSTICK_WINDOW_IDENTIFIER]: Set<string | number>;
+    [JOYSTICK_WINDOW_ACTIVE]: JoystickController[];
+  }
+}
+
 /**
  * Options for the joystick
- * @typedef {Object} JoystickOptions
- * @property {number} maxRange - Maximum range of the joystick dot (number of pixels)
- * @property {number} level - Number of level of the joystick (eg 10 would return integers between -10 and 10)
- * @property {number} radius - Radius of the joystick container (number of pixels)
- * @property {number} joystickRadius - Radius of the joystick inner dot (number of pixels)
- * @property {number} opacity - Opacity of the joystick
- * @property {string} containerClass - Class for the joystick container for adding additional styles (outer container)
- * @property {string} controllerClass - Class for the joystick controller for adding additional styles (inner container)
- * @property {string} joystickClass - Class for the joystick dot for adding additional styles
- * @property {boolean} leftToRight - Left to right adjustment (x position from left)
- * @property {boolean} bottomToUp - Bottom to up adjustment (y position from bottom)
- * @property {string} x - x position of the joystick controller on screen (equal to left/right of css)
- * @property {string} y - y position of the joystick controller on screen (equal to bottom/top of css)
- * @property {boolean} distortion - if true, the joystick will be distorted when the dot is moved to the edge of the joystick
- * @property {boolean} dynamicPositionTarget - Shows the joystick when the user touch/click on the screen at the position where it was clicked/touched
- * @property {HTMLElement} dynamicPositionTarget - If dynamicPosition true, uses this target to set the event listener on (if not provided use document)
- * @property {string|number} mouseClickButton - click button to show the joystick (if not provided, shows on all clicks)(Values: ALL, LEFT, MIDDLE, RIGHT, or button numbers (-1 to 4. -1 for all))
- * @property {boolean} hideContextMenu - if true, hides the context menu on right click
  */
+interface JoystickConfig {
+  /**
+   * Maximum range of the joystick dot (number of pixels).
+   */
+  maxRange: number;
+
+  /**
+   * Number of levels of the joystick (e.g., 10 would return integers between -10 and 10).
+   */
+  level: number;
+
+  /**
+   * Radius of the joystick container (number of pixels).
+   */
+  radius: number;
+
+  /**
+   * Radius of the joystick inner dot (number of pixels).
+   */
+  joystickRadius: number;
+
+  /**
+   * Opacity of the joystick.
+   */
+  opacity: number;
+
+  /**
+   * Class for the joystick container for adding additional styles (outer container).
+   */
+  containerClass: string;
+
+  /**
+   * Class for the joystick controller for adding additional styles (inner container).
+   */
+  controllerClass: string;
+
+  /**
+   * Class for the joystick dot for adding additional styles.
+   */
+  joystickClass: string;
+
+  /**
+   * Left to right adjustment (x position from left).
+   */
+  leftToRight: boolean;
+
+  /**
+   * Bottom to up adjustment (y position from bottom).
+   */
+  bottomToUp: boolean;
+
+  /**
+   * x position of the joystick controller on screen (equal to left/right in CSS).
+   */
+  x: string;
+
+  /**
+   * y position of the joystick controller on screen (equal to bottom/top in CSS).
+   */
+  y: string;
+
+  /**
+   * If true, the joystick will be distorted when the dot is moved to the edge of the joystick.
+   */
+  distortion: boolean;
+
+  /**
+   * Shows the joystick when the user touches/clicks on the screen at the position where it was clicked/touched.
+   */
+  dynamicPosition: boolean;
+
+  /**
+   * If dynamicPosition is true, uses this target to set the event listener on (if not provided, uses document).
+   */
+  dynamicPositionTarget: HTMLElement | null;
+
+  /**
+   * Click button to show the joystick (if not provided, shows on all clicks).
+   * Values: ALL, LEFT, MIDDLE, RIGHT, or button numbers (-1 to 4; -1 for all).
+   */
+  mouseClickButton: string | number;
+
+  /**
+   * If true, hides the context menu on right-click.
+   */
+  hideContextMenu: boolean;
+}
 
 /**
  * Joystick onMove Callback
- * @typedef {Object} JoystickOnMove
- * @property {number} x - x position of the joystick relative to the center of it
- * @property {number} y - y position of the joystick relative to the center of it
- * @property {number} leveledX - x position scaled and rounded to be a step between -level to level (level comes from options)
- * @property {number} leveledY - y position scaled and rounded to be a step between -level to level (level comes from options)
- * @property {number} angle - angle of the line between center of the joystick and position of the dot in radians
- * @property {number} distance - distance of the dot from the center joystick
  */
+export interface JoystickOnMove {
+  /**
+   * x position of the joystick relative to the center of it.
+   */
+  x: number;
 
-const JOYSTICK_WINDOW_IDENTIFIER = "__joysticks_identifiers__";
-const JOYSTICK_WINDOW_ACTIVE = "__active_joysticks__";
+  /**
+   * y position of the joystick relative to the center of it.
+   */
+  y: number;
 
+  /**
+   * x position scaled and rounded to be a step between -level to level (level comes from options).
+   */
+  leveledX: number;
+
+  /**
+   * y position scaled and rounded to be a step between -level to level (level comes from options).
+   */
+  leveledY: number;
+
+  /**
+   * Angle of the line between the center of the joystick and position of the dot in radians.
+   */
+  angle: number;
+
+  /**
+   * Distance of the dot from the center joystick.
+   */
+  distance: number;
+}
+
+export type JoystickOptions = Partial<JoystickConfig>;
+
+// Mouse click buttons constants
 export const MOUSE_CLICK_BUTTONS = {
   ALL: -1,
   LEFT: 0,
   MIDDLE: 1,
   RIGHT: 2,
-};
+} as const;
+
+type MouseClickButton = keyof typeof MOUSE_CLICK_BUTTONS | number;
 
 /**
  * A JavaScript library for creating a virtual joystick.
  * @author Cyrus Mobini
- * @version 1.0.12
+ * @version 1.1.1
  * @docs https://github.com/cyrus2281/joystick-controller#readme
  */
 class JoystickController {
   /**
    * Default transition for the joystick
-   * @type {string}
-   * @private
    */
-  JOYSTICK_TRANSITION = "border-radius 0.2s ease-in-out";
+  private JOYSTICK_TRANSITION: string = "border-radius 0.2s ease-in-out";
+
   /**
    * Default options for the joystick
-   * @type {JoystickOptions}
-   * @private
    */
-  options = {
+  private options: JoystickConfig = {
     maxRange: 100,
     level: 10,
     radius: 50,
@@ -75,116 +182,109 @@ class JoystickController {
     distortion: false,
     dynamicPosition: false,
     dynamicPositionTarget: null,
+    mouseClickButton: -1,
+    hideContextMenu: false,
   };
 
   /**
    * Joystick onMove Callback
-   * @type {(coordinates: JoystickOnMove) => void}
+   * @param coordinates - The joystick coordinates and state.
    */
-  onMove;
-  /**
-   * x position of the joystick
-   * @type {number}
-   */
-  x = 0;
-  /**
-   * y position of the joystick
-   * @type {number}
-   */
-  y = 0;
-  /**
-   * x position of the joystick scaled to be between -level and +level
-   * @type {number}
-   */
-  leveledX = 0;
-  /**
-   * y position of the joystick scaled to be between -level and +level
-   * @type {number}
-   */
-  leveledY = 0;
-  /**
-   * angle of the joystick in radians
-   * @type {number}
-   */
-  angle = 0;
-  /**
-   * distance of the joystick from center
-   * @type {number}
-   */
-  distance = 0;
-  /**
-   * Style for the joystick
-   * @private
-   * @type {HTMLDivElement}
-   */
-  style;
-  /**
-   * ID for the joystick.
-   *
-   * You can access HTML Elements using a prefix and this ID.
-   *
-   * Container: .joystick-container-{id}
-   *
-   * Controller: .joystick-controller-{id}
-   *
-   * Joystick: .joystick-{id}
-   * @type {string}
-   */
-  id;
-  /**
-   * Container for the joystick
-   * @private
-   * @type {HTMLDivElement}
-   */
-  container;
-  /**
-   * Controller for the joystick
-   * @private
-   * @type {HTMLDivElement}
-   */
-  controller;
-  /**
-   * Joystick
-   * @private
-   * @type {HTMLDivElement}
-   */
-  joystick;
-  /**
-   * x center of the joystick
-   * @private
-   * @type {number}
-   */
-  centerX;
-  /**
-   * y center of the joystick
-   * @private
-   * @type {number}
-   */
-  centerY;
-  /**
-   * Is the joystick move started
-   * @private
-   * @type {boolean}
-   */
-  started;
-  /**
-   * Identifier for the joystick for dynamic positioning
-   * @private
-   * @type {number|string|null}
-   */
-  identifier = null;
-  /**
-   * Mouse button to listen on
-   * @private
-   * @type {number|string}
-   */
-  mouseButton = -1;
+  onMove?: (coordinates: JoystickOnMove) => void;
 
   /**
-   * @param {JoystickOptions} options - Options for the joystick
-   * @param {(coordinates: JoystickOnMove) => void} onMove - Joystick onMove Callback
+   * x position of the joystick.
    */
-  constructor(options, onMove) {
+  x: number = 0;
+
+  /**
+   * y position of the joystick.
+   */
+  y: number = 0;
+
+  /**
+   * x position of the joystick scaled to be between -level and +level.
+   */
+  leveledX: number = 0;
+
+  /**
+   * y position of the joystick scaled to be between -level and +level.
+   */
+  leveledY: number = 0;
+
+  /**
+   * Angle of the joystick in radians.
+   */
+  angle: number = 0;
+
+  /**
+   * Distance of the joystick dot from the center.
+   */
+  distance: number = 0;
+
+  /**
+   * Style for the joystick.
+   */
+  private style!: HTMLStyleElement;
+
+  /**
+   * ID for the joystick.
+   * You can access HTML elements using a prefix and this ID.
+   * Container: .joystick-container-{id}
+   * Controller: .joystick-controller-{id}
+   * Joystick: .joystick-{id}
+   */
+  id!: string;
+
+  /**
+   * Container for the joystick.
+   */
+  private container!: HTMLDivElement;
+
+  /**
+   * Controller for the joystick.
+   */
+  private controller!: HTMLDivElement;
+
+  /**
+   * Joystick element.
+   */
+  private joystick!: HTMLDivElement;
+
+  /**
+   * x center of the joystick.
+   */
+  private centerX!: number;
+
+  /**
+   * y center of the joystick.
+   */
+  private centerY!: number;
+
+  /**
+   * Indicates if the joystick movement has started.
+   */
+  private started: boolean = false;
+
+  /**
+   * Identifier for the joystick for dynamic positioning.
+   */
+  private identifier: number | string | null = null;
+
+  /**
+   * Mouse button to listen on.
+   */
+  private mouseButton: MouseClickButton = -1;
+
+  /**
+   * Constructor for the joystick controller
+   * @param options Joystick options
+   * @param onMove Callback function when the joystick moves
+   */
+  constructor(
+    options: JoystickOptions,
+    onMove: (coordinates: JoystickOnMove) => void
+  ) {
     this.options = Object.assign(this.options, options);
     this.onMove = onMove;
     this.validate();
@@ -192,10 +292,9 @@ class JoystickController {
   }
 
   /**
-   * Validates options or status of window for joysticks
-   * @private
+   * Validates if there are any conflicting dynamicPosition options among active joysticks.
    */
-  validate() {
+  private validate() {
     if (
       window[JOYSTICK_WINDOW_ACTIVE] &&
       window[JOYSTICK_WINDOW_ACTIVE].length > 0 &&
@@ -213,15 +312,15 @@ class JoystickController {
   }
 
   /**
-   * Setting up the joystick
-   * @private
+   * Initializes the joystick controller.
    */
-  init() {
+  private init() {
     // Adding identifier array to window
     if (!window[JOYSTICK_WINDOW_IDENTIFIER]) {
       window[JOYSTICK_WINDOW_IDENTIFIER] = new Set();
     }
-    // ID
+
+    // Generate a unique ID for the joystick
     this.id =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
@@ -232,7 +331,7 @@ class JoystickController {
       [this]
     );
 
-    // Styles
+    // Styles for the joystick
     this.style = document.createElement("style");
     this.style.setAttribute("id", "style-" + this.id);
     this.style.innerHTML = `
@@ -280,7 +379,7 @@ class JoystickController {
         }
         `;
 
-    // Container
+    // Container for the joystick
     this.container = document.createElement("div");
     this.container.setAttribute("id", "joystick-container-" + this.id);
     this.container.setAttribute(
@@ -288,7 +387,7 @@ class JoystickController {
       "joystick-container-" + this.id + " " + this.options.containerClass
     );
 
-    // Controller
+    // Controller for the joystick
     this.controller = document.createElement("div");
     this.controller.setAttribute("id", "joystick-controller-" + this.id);
     this.controller.setAttribute(
@@ -296,7 +395,7 @@ class JoystickController {
       "joystick-controller-" + this.id + " " + this.options.controllerClass
     );
 
-    // Stick
+    // Actual joystick element
     this.joystick = document.createElement("div");
     this.joystick.setAttribute("id", "joystick-" + this.id);
     this.joystick.setAttribute(
@@ -304,20 +403,28 @@ class JoystickController {
       "joystick-" + this.id + " " + this.options.joystickClass
     );
 
-    // Append to Body
+    // Append the joystick elements to the DOM
     this.controller.appendChild(this.joystick);
     this.container.appendChild(this.controller);
     document.head.appendChild(this.style);
-    !this.options.dynamicPosition && document.body.appendChild(this.container);
-    // Add Event Listeners
+    if (!this.options.dynamicPosition) {
+      document.body.appendChild(this.container);
+    }
+
+    // Add event listeners for interaction
     this.addEventListeners();
-    // center of joystick
+
+    // Center of the joystick
     this.recenterJoystick();
-    // Resting Coordinates
+
+    // Resting coordinates
     this.resetCoordinates();
   }
 
-  addEventListeners = () => {
+  /**
+   * Adds necessary event listeners for the joystick.
+   */
+  private addEventListeners = () => {
     const mcb = this.options.mouseClickButton;
     if (
       (typeof mcb === "string" &&
@@ -325,15 +432,26 @@ class JoystickController {
       (typeof mcb === "number" && mcb < 6 && mcb > -2)
     ) {
       this.mouseButton =
-        typeof mcb === "string" ? MOUSE_CLICK_BUTTONS[mcb] : mcb;
+        typeof mcb === "string"
+          ? MOUSE_CLICK_BUTTONS[mcb as keyof typeof MOUSE_CLICK_BUTTONS]
+          : mcb;
     }
     if (this.options.dynamicPosition) {
       const target = this.options.dynamicPositionTarget || document;
       // mouse events Listeners
-      target.addEventListener("mousedown", this.dynamicPositioningMouse);
-      document.addEventListener("mouseup", this.removeDynamicPositioning);
+      target.addEventListener(
+        "mousedown",
+        this.dynamicPositioningMouse as EventListenerOrEventListenerObject
+      );
+      document.addEventListener(
+        "mouseup",
+        this.removeDynamicPositioning as EventListenerOrEventListenerObject
+      );
       // touch events Listeners
-      target.addEventListener("touchstart", this.dynamicPositioningTouch);
+      target.addEventListener(
+        "touchstart",
+        this.dynamicPositioningTouch as EventListenerOrEventListenerObject
+      );
       document.addEventListener("touchmove", this.onTouchEvent, {
         passive: false,
       });
@@ -367,10 +485,9 @@ class JoystickController {
   /**
    * Fetch the coordinates of the joystick container
    * base on user click, and adds it to document
-   * @private
-   * @param {Event} e mousedown event
+   * @param e MouseEvent
    */
-  dynamicPositioningMouse = (e) => {
+  private dynamicPositioningMouse = (e: MouseEvent) => {
     if (this.identifier !== null) return;
     if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
     const identifier = e.x + "-" + e.y;
@@ -391,11 +508,9 @@ class JoystickController {
   /**
    * Fetch the coordinates of the joystick container
    * base on user touch, and adds it to document
-   * @private
-   * @param {Event} event touchstart event
+   * @param event touchstart event
    */
-  dynamicPositioningTouch = (event) => {
-    // event.preventDefault();
+  private dynamicPositioningTouch = (event: TouchEvent) => {
     if (this.identifier !== null) return;
     const identifier = event.changedTouches[0].identifier;
     if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
@@ -405,7 +520,7 @@ class JoystickController {
     let touch;
     for (let i = 0; i < event.touches.length; i++) {
       const tc = event.touches.item(i);
-      if (this.identifier === tc.identifier) {
+      if (this.identifier === tc?.identifier) {
         touch = tc;
         break;
       }
@@ -424,14 +539,18 @@ class JoystickController {
 
   /**
    * Stop the dynamic positioning of the joystick
-   * @param {Event} e mousedown/touchend event
+   * @param  e mousedown/touchend event
    */
-  removeDynamicPositioning = (e) => {
+  private removeDynamicPositioning = (e: MouseEvent | TouchEvent) => {
     if (this.identifier === null) return;
     if (e.type === "touchend") {
-      const identifier = e.changedTouches[0].identifier;
+      const identifier = (e as TouchEvent).changedTouches[0].identifier;
       if (this.identifier !== identifier) return;
-    } else if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
+    } else if (
+      this.mouseButton !== -1 &&
+      (e as MouseEvent).button !== this.mouseButton
+    )
+      return;
     window[JOYSTICK_WINDOW_IDENTIFIER].delete(this.identifier);
     this.identifier = null;
     this.onStopEvent(e);
@@ -440,17 +559,16 @@ class JoystickController {
 
   /**
    * Updating the x,y, distance,angle, and joystick position base on the x and y
-   * @private
-   * @param {number} x x coordinate
-   * @param {number} y y coordinate
+   * @param x x coordinate
+   * @param y y coordinate
    */
-  updateCoordinates = (x, y) => {
+  private updateCoordinates = (x: number, y: number) => {
     // distance from center
-    this.distance = Math.sqrt(
+    this.distance = +Math.sqrt(
       Math.pow(x - this.centerX, 2) + Math.pow(y - this.centerY, 2)
     ).toFixed(4);
     // angle from center in Radians
-    this.angle = Math.atan2(y - this.centerY, x - this.centerX).toFixed(4);
+    this.angle = +Math.atan2(y - this.centerY, x - this.centerX).toFixed(4);
     // considering max range
     const adjustedDistance =
       this.distance > this.options.maxRange
@@ -486,9 +604,8 @@ class JoystickController {
 
   /**
    * Resting Coordinates
-   * @private
    */
-  resetCoordinates = () => {
+  private resetCoordinates = () => {
     this.x = 0;
     this.y = 0;
     this.leveledX = 0;
@@ -514,9 +631,8 @@ class JoystickController {
 
   /**
    * Distort joystick based on distance if further than 70% of maxRange
-   * @private
    */
-  distortJoystick = () => {
+  private distortJoystick = () => {
     if (this.distance > this.options.maxRange * 0.7) {
       // distorting joystick
       this.joystick.style.borderRadius = "70% 80% 70% 15%";
@@ -534,16 +650,22 @@ class JoystickController {
 
   /**
    * on grab joystick event
-   * @private
-   * @param {Event} event
+   * @param event
    */
-  onStartEvent = (event, addIdentifier = true) => {
+  private onStartEvent = (
+    event: MouseEvent | TouchEvent,
+    addIdentifier = true
+  ) => {
     if (event.type === "mousedown") {
-      if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
+      if (
+        this.mouseButton !== -1 &&
+        (event as MouseEvent).button !== this.mouseButton
+      )
+        return;
       window.addEventListener("mousemove", this.onMouseEvent);
       window.addEventListener("mouseup", this.onStopEvent);
     } else if (addIdentifier) {
-      const identifier = event.changedTouches[0].identifier;
+      const identifier = (event as TouchEvent).changedTouches[0].identifier;
       this.identifier = identifier;
     }
     this.started = true;
@@ -554,12 +676,15 @@ class JoystickController {
 
   /**
    * On leave joystick event
-   * @private
-   * @param {Event} event leave joystick event
+   * @param event leave joystick event
    */
-  onStopEvent = (event) => {
+  private onStopEvent = (event: MouseEvent | TouchEvent) => {
     if (event.type === "mouseup") {
-      if (this.mouseButton !== -1 && event.button !== this.mouseButton) return;
+      if (
+        this.mouseButton !== -1 &&
+        (event as MouseEvent).button !== this.mouseButton
+      )
+        return;
       window.removeEventListener("mousemove", this.onMouseEvent);
       window.removeEventListener("mouseup", this.onStopEvent);
     } else {
@@ -575,15 +700,14 @@ class JoystickController {
 
   /**
    * Update the coordinates of the joystick on touch move
-   * @private
-   * @param {Event} event touch move event
+   * @param event touch move event
    */
-  onTouchEvent = (event) => {
+  private onTouchEvent = (event: TouchEvent) => {
     // Current touch (for multi-touch)
     let touch;
     for (let i = 0; i < event.touches.length; i++) {
       const tc = event.touches.item(i);
-      if (this.identifier === tc.identifier) {
+      if (this.identifier === tc?.identifier) {
         touch = tc;
         break;
       }
@@ -599,10 +723,9 @@ class JoystickController {
 
   /**
    * Update the coordinates of the joystick on mouse move
-   * @private
-   * @param {Event} event mouse move event
+   * @param event mouse move event
    */
-  onMouseEvent = (event) => {
+  private onMouseEvent = (event: MouseEvent) => {
     if (!this.started) return;
     event.preventDefault();
     // position of mouse
@@ -614,9 +737,8 @@ class JoystickController {
 
   /**
    * Update the center coordinates of the joystick on window resize
-   * @private
    */
-  recenterJoystick = () => {
+  private recenterJoystick = () => {
     // update the center coordinates
     this.centerX =
       this.controller.getBoundingClientRect().left + this.options.radius;
@@ -632,13 +754,17 @@ class JoystickController {
     if (this.options.dynamicPosition) {
       const target = this.options.dynamicPositionTarget || document;
       // mouse events Listeners
-      target.removeEventListener("mousedown", this.dynamicPositioningMouse);
+      target.removeEventListener(
+        "mousedown",
+        this.dynamicPositioningMouse as EventListenerOrEventListenerObject
+      );
       document.removeEventListener("mouseup", this.removeDynamicPositioning);
       // touch events Listeners
-      target.removeEventListener("touchstart", this.dynamicPositioningTouch);
-      document.removeEventListener("touchmove", this.onTouchEvent, {
-        passive: false,
-      });
+      target.removeEventListener(
+        "touchstart",
+        this.dynamicPositioningTouch as EventListenerOrEventListenerObject
+      );
+      document.removeEventListener("touchmove", this.onTouchEvent);
       document.removeEventListener("touchend", this.removeDynamicPositioning);
     } else {
       // touch events Listeners
