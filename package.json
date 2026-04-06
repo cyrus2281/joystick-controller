@@ -1,6 +1,6 @@
 {
   "name": "joystick-controller",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "A JavaScript virtual joystick controller for both desktop and mobile devices.",
   "scripts": {
     "build": "tsup",
