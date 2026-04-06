@@ -24,50 +24,66 @@ import JoystickController from "joystick-controller";
 const joystick = new JoystickController({}, (data) => console.log(data));
 ```
 
-The import example here is module style import. JoystickController also supports global and commonJs import style.
+JoystickController also supports CommonJS and global (CDN) import styles.
+
+**CDN / unpkg**
+
+```html
+<script src="https://unpkg.com/joystick-controller/dist/joystick-controller.umd.js"></script>
+<script>
+  // Unwrap the module namespace to get the class
+  const JoystickController = window.JoystickController.default;
+  const joystick = new JoystickController({}, (data) => console.log(data));
+</script>
+```
+
+## Browser Support
+
+Requires the [Pointer Events API](https://caniuse.com/pointer), supported in all modern browsers (Chrome 55+, Firefox 59+, Safari 13+, Edge 12+).
 
 ## Options
 
-You can pass a set of options as the first argument to further customize your joystick controller
+You can pass a set of options as the first argument to further customize your joystick controller.
 
 | Name                  | Type           | Default    | Description                                                                                                                                        |
 | --------------------- | -------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | maxRange              | number         | 100        | Maximum range of the joystick dot (number of pixels)                                                                                               |
-| level                 | number         | 10         | Number of level of the joystick (eg 10 would return integers between -10 and 10)                                                                   |
+| level                 | number         | 10         | Number of levels of the joystick (e.g. 10 returns integers between -10 and 10)                                                                     |
 | radius                | number         | 50         | Radius of the joystick container (number of pixels)                                                                                                |
-| joystickRadius        | 30             | number     | Radius of the joystick inner dot (number of pixels)                                                                                                |
+| joystickRadius        | number         | 30         | Radius of the joystick inner dot (number of pixels)                                                                                                |
 | opacity               | number         | 0.8        | Opacity of the joystick                                                                                                                            |
 | containerClass        | string         | ''         | Class for the joystick container for adding additional styles (outer container)                                                                    |
 | controllerClass       | string         | ''         | Class for the joystick controller for adding additional styles (inner container)                                                                   |
 | joystickClass         | string         | ''         | Class for the joystick dot for adding additional styles                                                                                            |
-| leftToRight           | boolean        | true       | Left to right adjustment (x position from left)(ignored if dynamicPosition=true)                                                                   |
-| bottomToUp            | boolean        | true       | Bottom to up adjustment (y position from bottom)(ignored if dynamicPosition=true)                                                                  |
-| x                     | string         | '50%'      | x position of the joystick controller on screen (equal to left/right of css)(ignored if dynamicPosition=true)                                      |
-| y                     | string         | '50%'      | y position of the joystick controller on screen (equal to bottom/top of css)(ignored if dynamicPosition=true)                                      |
-| distortion            | boolean        | false      | if true, the joystick will be distorted when the dot is moved to the edge of the joystick                                                          |
-| dynamicPosition       | boolean        | false      | Shows the joystick when the user touch/click on the screen at the position where it was clicked/touched                                            |
-| dynamicPositionTarget | HTMLElement    | null       | If dynamicPosition true, uses this target to set the event listener on (if not provided use document)                                              |
-| mouseClickButton      | string\|number | "ALL" (-1) | click button to show the joystick (if not provided, shows on all clicks)(Values: ALL, LEFT, MIDDLE, RIGHT, or button number (-1 to 4. -1 for all)) |
-| hideContextMenu       | boolean        | false      | if true, hides the context menu on right click  (Recommended to be used dynamicPosition and dynamicPositionTarget) |
+| leftToRight           | boolean        | true       | x position from left (ignored if dynamicPosition=true)                                                                                             |
+| bottomToUp            | boolean        | true       | y position from bottom (ignored if dynamicPosition=true)                                                                                           |
+| x                     | string         | '50%'      | x position on screen — maps to CSS left/right (ignored if dynamicPosition=true)                                                                    |
+| y                     | string         | '50%'      | y position on screen — maps to CSS bottom/top (ignored if dynamicPosition=true)                                                                    |
+| distortion            | boolean        | false      | If true, the joystick dot distorts visually when pushed to the edge                                                                                |
+| dynamicPosition       | boolean        | false      | Shows the joystick at the position where the user clicks/touches                                                                                   |
+| dynamicPositionTarget | HTMLElement    | null       | If dynamicPosition is true, listens for events on this element (defaults to document)                                                              |
+| mouseClickButton      | string\|number | "ALL" (-1) | Mouse button that activates the joystick (ALL, LEFT, MIDDLE, RIGHT, or a button number from -1 to 4; -1 for all)                                   |
+| hideContextMenu       | boolean        | false      | If true, suppresses the context menu on right-click (recommended with dynamicPosition)                                                             |
 
 ## Callback Arguments
 
-Joystick would trigger the callback on each move event. The following arguments are passed to the callback.
-| Name | Type | Description |
-| ------------- | ------------- | ------------- |
-| x | number | x position of the joystick relative to the center of it
-| y | number | y position of the joystick relative to the center of it
-| leveledX | number | x position scaled and rounded to be a step between -level to level (level comes from options)
-| leveledY | number | y position scaled and rounded to be a step between -level to level (level comes from options)
-| angle | number | angle of the line between center of the joystick and position of the dot in radians
-| distance | number | distance of the dot from the center joystick
+The callback fires on every move event and once on release (all values reset to 0).
+
+| Name     | Type   | Description                                                                              |
+| -------- | ------ | ---------------------------------------------------------------------------------------- |
+| x        | number | x position of the joystick relative to its center                                        |
+| y        | number | y position of the joystick relative to its center                                        |
+| leveledX | number | x scaled and rounded to an integer between -level and +level                             |
+| leveledY | number | y scaled and rounded to an integer between -level and +level                             |
+| angle    | number | angle of the line from the center to the dot, in radians                                 |
+| distance | number | distance of the dot from the center                                                      |
 
 ## Customized Example
 
-All the options are optional, but a customized instance would look like this:
+All options are optional. A fully customized instance looks like this:
 
 ```js
-// Static Example
+// Static joystick
 const staticJoystick = new JoystickController(
   {
     maxRange: 70,
@@ -89,7 +105,8 @@ const staticJoystick = new JoystickController(
   ({ x, y, leveledX, leveledY, distance, angle }) =>
     console.log(x, y, leveledX, leveledY, distance, angle)
 );
-// Dynamic Position Example
+
+// Dynamic position joystick
 const dynamicJoystick = new JoystickController(
   {
     maxRange: 70,
@@ -113,7 +130,7 @@ const dynamicJoystick = new JoystickController(
 
 ## Clean Up
 
-Run `destroy` function to clear all the event listeners and remove the joystick from the document
+Call `destroy()` to remove all event listeners and the joystick element from the DOM.
 
 ```js
 joystick.destroy();

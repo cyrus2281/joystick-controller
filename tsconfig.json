@@ -1,18 +1,15 @@
 {
-    "compilerOptions": {
-      "target": "es5",
-      "module": "esnext",
-      "strict": true,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "moduleResolution": "node",
-      "declaration": true,
-      "declarationMap": true,
-      "sourceMap": true,
-      "outDir": "./dist/ts",
-      "jsx": "react"
-    },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist"]
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2017", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*", "tsup.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }
