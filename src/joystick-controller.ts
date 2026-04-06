@@ -1,17 +1,6 @@
-// Joystick window identifier
-const JOYSTICK_WINDOW_IDENTIFIER = "__joysticks_identifiers__";
-// Active joystick window
-const JOYSTICK_WINDOW_ACTIVE = "__active_joysticks__";
-
-/**
- * Declaring global window types
- */
-declare global {
-  interface Window {
-    [JOYSTICK_WINDOW_IDENTIFIER]: Set<string | number>;
-    [JOYSTICK_WINDOW_ACTIVE]: JoystickController[];
-  }
-}
+// Module-level shared state — replaces window globals
+const _activeIdentifiers = new Set<number | string>();
+const _activeJoysticks: JoystickController[] = [];
 
 /**
  * Options for the joystick
@@ -151,130 +140,91 @@ export const MOUSE_CLICK_BUTTONS = {
 
 type MouseClickButton = keyof typeof MOUSE_CLICK_BUTTONS | number;
 
+const DEFAULT_OPTIONS: JoystickConfig = {
+  maxRange: 100,
+  level: 10,
+  radius: 50,
+  joystickRadius: 30,
+  opacity: 0.8,
+  leftToRight: true,
+  bottomToUp: true,
+  containerClass: "",
+  controllerClass: "",
+  joystickClass: "",
+  x: "50%",
+  y: "50%",
+  distortion: false,
+  dynamicPosition: false,
+  dynamicPositionTarget: null,
+  mouseClickButton: -1,
+  hideContextMenu: false,
+};
+
+const JOYSTICK_GRAB_TRANSITION = "border-radius 0.2s ease-in-out";
+const JOYSTICK_RELEASE_TRANSITION = "all 0.2s ease-in-out";
+
+const _preventDefault = (e: Event) => e.preventDefault();
+
 /**
  * A JavaScript library for creating a virtual joystick.
  * @author Cyrus Mobini
- * @version 1.1.1
+ * @version 1.2.0
  * @docs https://github.com/cyrus2281/joystick-controller#readme
  */
-class JoystickController {
-  /**
-   * Default transition for the joystick
-   */
-  private JOYSTICK_TRANSITION: string = "border-radius 0.2s ease-in-out";
-
-  /**
-   * Default options for the joystick
-   */
-  private options: JoystickConfig = {
-    maxRange: 100,
-    level: 10,
-    radius: 50,
-    joystickRadius: 30,
-    opacity: 0.8,
-    leftToRight: true,
-    bottomToUp: true,
-    containerClass: "",
-    controllerClass: "",
-    joystickClass: "",
-    x: "50%",
-    y: "50%",
-    distortion: false,
-    dynamicPosition: false,
-    dynamicPositionTarget: null,
-    mouseClickButton: -1,
-    hideContextMenu: false,
-  };
+export class JoystickController {
+  private options: JoystickConfig;
 
   /**
    * Joystick onMove Callback
-   * @param coordinates - The joystick coordinates and state.
    */
   onMove?: (coordinates: JoystickOnMove) => void;
 
-  /**
-   * x position of the joystick.
-   */
+  /** x position of the joystick relative to its center. */
   x: number = 0;
-
-  /**
-   * y position of the joystick.
-   */
+  /** y position of the joystick relative to its center. */
   y: number = 0;
-
-  /**
-   * x position of the joystick scaled to be between -level and +level.
-   */
+  /** x scaled to -level … +level */
   leveledX: number = 0;
-
-  /**
-   * y position of the joystick scaled to be between -level and +level.
-   */
+  /** y scaled to -level … +level */
   leveledY: number = 0;
-
-  /**
-   * Angle of the joystick in radians.
-   */
+  /** Angle in radians */
   angle: number = 0;
-
-  /**
-   * Distance of the joystick dot from the center.
-   */
+  /** Distance from center */
   distance: number = 0;
 
   /**
-   * Style for the joystick.
+   * Unique identifier for this joystick instance.
+   * DOM elements are accessible via:
+   *   .joystick-container-{id}
+   *   .joystick-controller-{id}
+   *   .joystick-{id}
    */
+  id: string;
+
   private style!: HTMLStyleElement;
-
-  /**
-   * ID for the joystick.
-   * You can access HTML elements using a prefix and this ID.
-   * Container: .joystick-container-{id}
-   * Controller: .joystick-controller-{id}
-   * Joystick: .joystick-{id}
-   */
-  id!: string;
-
-  /**
-   * Container for the joystick.
-   */
   private container!: HTMLDivElement;
-
-  /**
-   * Controller for the joystick.
-   */
   private controller!: HTMLDivElement;
-
-  /**
-   * Joystick element.
-   */
   private joystick!: HTMLDivElement;
 
-  /**
-   * x center of the joystick.
-   */
-  private centerX!: number;
-
-  /**
-   * y center of the joystick.
-   */
-  private centerY!: number;
-
-  /**
-   * Indicates if the joystick movement has started.
-   */
+  private centerX: number = 0;
+  private centerY: number = 0;
   private started: boolean = false;
+  private activePointerId: number | null = null;
+  private mouseButton: MouseClickButton = MOUSE_CLICK_BUTTONS.ALL;
 
-  /**
-   * Identifier for the joystick for dynamic positioning.
-   */
-  private identifier: number | string | null = null;
+  // RAF batching state
+  private rafId: number = 0;
+  private pendingX: number = 0;
+  private pendingY: number = 0;
+  private pendingAngle: number = 0;
+  private pendingDistance: number = 0;
 
-  /**
-   * Mouse button to listen on.
-   */
-  private mouseButton: MouseClickButton = -1;
+  // Bound references stored for addEventListener/removeEventListener symmetry
+  private readonly boundOnPointerDown: (e: PointerEvent) => void;
+  private readonly boundOnPointerMove: (e: PointerEvent) => void;
+  private readonly boundOnPointerUp: (e: PointerEvent) => void;
+  private readonly boundOnResize: () => void;
+  private readonly boundFlushDOMUpdate: () => void;
 
   /**
    * Constructor for the joystick controller
@@ -285,8 +235,17 @@ class JoystickController {
     options: JoystickOptions,
     onMove: (coordinates: JoystickOnMove) => void
   ) {
-    this.options = Object.assign(this.options, options);
+    this.options = { ...DEFAULT_OPTIONS, ...options };
     this.onMove = onMove;
+
+    this.boundOnPointerDown = this.onPointerDown.bind(this);
+    this.boundOnPointerMove = this.onPointerMove.bind(this);
+    this.boundOnPointerUp = this.onPointerUp.bind(this);
+    this.boundOnResize = this.recenterJoystick.bind(this);
+    this.boundFlushDOMUpdate = this.flushDOMUpdate.bind(this);
+
+    this.id = crypto.randomUUID().replace(/-/g, "");
+
     this.validate();
     this.init();
   }
@@ -296,9 +255,8 @@ class JoystickController {
    */
   private validate() {
     if (
-      window[JOYSTICK_WINDOW_ACTIVE] &&
-      window[JOYSTICK_WINDOW_ACTIVE].length > 0 &&
-      window[JOYSTICK_WINDOW_ACTIVE].some(
+      _activeJoysticks.length > 0 &&
+      _activeJoysticks.some(
         (j) =>
           j.options.dynamicPosition &&
           (j.options.dynamicPositionTarget || document) ===
@@ -306,485 +264,428 @@ class JoystickController {
       )
     ) {
       console.error(
-        "Multiple dynamicPosition should be used with different target elements (dynamicPositionTarget) to prevent event collision."
+        "Multiple dynamicPosition joysticks should use different target elements (dynamicPositionTarget) to prevent event collision."
       );
     }
+  }
+
+  /**
+   * Resolves the mouseClickButton option to a numeric button value.
+   */
+  private resolveMouseButton(): MouseClickButton {
+    const mcb = this.options.mouseClickButton;
+    if (
+      typeof mcb === "string" &&
+      Object.prototype.hasOwnProperty.call(MOUSE_CLICK_BUTTONS, mcb)
+    ) {
+      return MOUSE_CLICK_BUTTONS[mcb as keyof typeof MOUSE_CLICK_BUTTONS];
+    }
+    if (typeof mcb === "number" && mcb >= -1 && mcb <= 4) return mcb;
+    return MOUSE_CLICK_BUTTONS.ALL;
   }
 
   /**
    * Initializes the joystick controller.
    */
   private init() {
-    // Adding identifier array to window
-    if (!window[JOYSTICK_WINDOW_IDENTIFIER]) {
-      window[JOYSTICK_WINDOW_IDENTIFIER] = new Set();
+    _activeJoysticks.push(this);
+    this.mouseButton = this.resolveMouseButton();
+
+    this.buildDOM();
+    this.addEventListeners();
+    this.recenterJoystick();
+    this.resetCoordinates();
+  }
+
+  /**
+   * Builds the DOM elements and injects styles.
+   */
+  private buildDOM() {
+    const { id, options } = this;
+
+    // Container positioning CSS — dynamic mode uses left/top set by JS at activation time
+    let containerPositionCSS: string;
+    if (options.dynamicPosition) {
+      containerPositionCSS = `left: 0; top: 0;`;
+    } else {
+      const xProp = options.leftToRight ? "left" : "right";
+      const yProp = options.bottomToUp ? "bottom" : "top";
+      const xTranslate = options.leftToRight ? "-50%" : "50%";
+      const yTranslate = options.bottomToUp ? "50%" : "-50%";
+      containerPositionCSS = `
+        ${xProp}: ${options.x};
+        ${yProp}: ${options.y};
+        transform: translate(${xTranslate}, ${yTranslate});`;
     }
 
-    // Generate a unique ID for the joystick
-    this.id =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-
-    // Adding to active joysticks
-    window[JOYSTICK_WINDOW_ACTIVE] = Object.assign(
-      window[JOYSTICK_WINDOW_ACTIVE] || [],
-      [this]
-    );
-
-    // Styles for the joystick
     this.style = document.createElement("style");
-    this.style.setAttribute("id", "style-" + this.id);
+    this.style.setAttribute("id", "style-" + id);
     this.style.innerHTML = `
-        .joystick-container-${this.id} {
+        .joystick-container-${id} {
             box-sizing: border-box;
             position: fixed;
             outline: none;
-            ${this.options.leftToRight ? "left" : "right"}: ${this.options.x};
-            ${this.options.bottomToUp ? "bottom" : "top"}: ${this.options.y};
-            transform: translate(${
-              this.options.dynamicPosition || this.options.leftToRight
-                ? "-50%"
-                : "50%"
-            }, ${
-      this.options.dynamicPosition || !this.options.bottomToUp ? "-50%" : "50%"
-    });
+            ${containerPositionCSS}
         }
-    
-        .joystick-controller-${this.id} {
+
+        .joystick-controller-${id} {
             box-sizing: border-box;
             outline: none;
-            opacity: ${this.options.opacity};
-            width: ${this.options.radius * 2}px;
-            height: ${this.options.radius * 2}px;
+            opacity: ${options.opacity};
+            width: ${options.radius * 2}px;
+            height: ${options.radius * 2}px;
             border-radius: 50%;
             position: relative;
             outline: 2px solid #4c4c4c77;
             background: radial-gradient(circle,#ebebeb55, #5c5c5c55);
         }
-    
-        .joystick-${this.id} {
+
+        .joystick-${id} {
             box-sizing: border-box;
             outline: none;
             position: absolute;
             cursor: grab;
-            width: ${this.options.joystickRadius * 2}px;
-            height: ${this.options.joystickRadius * 2}px;
+            width: ${options.joystickRadius * 2}px;
+            height: ${options.joystickRadius * 2}px;
             z-index: 1;
             border-radius: 50%;
             left: 50%;
             bottom: 50%;
             transform: translate(-50%, 50%);
             background: radial-gradient(#000c, #3e3f46aa);
-            transition: ${this.JOYSTICK_TRANSITION};
+            transition: ${JOYSTICK_GRAB_TRANSITION};
         }
         `;
 
-    // Container for the joystick
     this.container = document.createElement("div");
-    this.container.setAttribute("id", "joystick-container-" + this.id);
+    this.container.setAttribute("id", "joystick-container-" + id);
     this.container.setAttribute(
       "class",
-      "joystick-container-" + this.id + " " + this.options.containerClass
+      "joystick-container-" + id + " " + options.containerClass
     );
 
-    // Controller for the joystick
     this.controller = document.createElement("div");
-    this.controller.setAttribute("id", "joystick-controller-" + this.id);
+    this.controller.setAttribute("id", "joystick-controller-" + id);
     this.controller.setAttribute(
       "class",
-      "joystick-controller-" + this.id + " " + this.options.controllerClass
+      "joystick-controller-" + id + " " + options.controllerClass
     );
 
-    // Actual joystick element
     this.joystick = document.createElement("div");
-    this.joystick.setAttribute("id", "joystick-" + this.id);
+    this.joystick.setAttribute("id", "joystick-" + id);
     this.joystick.setAttribute(
       "class",
-      "joystick-" + this.id + " " + this.options.joystickClass
+      "joystick-" + id + " " + options.joystickClass
     );
 
-    // Append the joystick elements to the DOM
     this.controller.appendChild(this.joystick);
     this.container.appendChild(this.controller);
     document.head.appendChild(this.style);
+
     if (!this.options.dynamicPosition) {
       document.body.appendChild(this.container);
     }
+  }
 
-    // Add event listeners for interaction
-    this.addEventListeners();
+  /**
+   * Registers the minimal set of persistent event listeners.
+   * pointermove/pointerup are attached dynamically on pointerdown and
+   * self-remove on pointerup, so they don't appear here.
+   */
+  private addEventListeners() {
+    if (this.options.dynamicPosition) {
+      const target = this.options.dynamicPositionTarget || document;
+      target.addEventListener(
+        "pointerdown",
+        this.boundOnPointerDown as EventListenerOrEventListenerObject
+      );
+      if (this.options.hideContextMenu) {
+        target.addEventListener("contextmenu", _preventDefault);
+        this.joystick.addEventListener("contextmenu", _preventDefault);
+      }
+    } else {
+      this.joystick.addEventListener("pointerdown", this.boundOnPointerDown);
+      if (this.options.hideContextMenu) {
+        this.container.addEventListener("contextmenu", _preventDefault);
+        this.joystick.addEventListener("contextmenu", _preventDefault);
+      }
+    }
+    window.addEventListener("resize", this.boundOnResize);
+  }
 
-    // Center of the joystick
+  /**
+   * Places the joystick container at (clientX, clientY) and appends it to the DOM.
+   * Called only in dynamic positioning mode.
+   */
+  private activateDynamicPosition(clientX: number, clientY: number) {
+    this.container.style.left = clientX + "px";
+    this.container.style.top = clientY + "px";
+    document.body.appendChild(this.container);
     this.recenterJoystick();
+  }
 
-    // Resting coordinates
+  /**
+   * Removes the dynamic joystick container from the DOM.
+   */
+  private deactivateDynamicPosition() {
+    this.container.remove();
+  }
+
+  /**
+   * Handles pointerdown — unified entry point for mouse and touch.
+   */
+  private onPointerDown(e: PointerEvent) {
+    // Dynamic mode: prevent two joysticks from capturing the same pointer
+    if (this.options.dynamicPosition) {
+      if (this.activePointerId !== null) return;
+      if (_activeIdentifiers.has(e.pointerId)) return;
+      // Mouse button filter (touch pointers always report button 0)
+      if (
+        e.pointerType === "mouse" &&
+        this.mouseButton !== MOUSE_CLICK_BUTTONS.ALL &&
+        e.button !== this.mouseButton
+      )
+        return;
+      _activeIdentifiers.add(e.pointerId);
+      this.activePointerId = e.pointerId;
+      this.activateDynamicPosition(e.clientX, e.clientY);
+    } else {
+      // Static mode: mouse button filter
+      if (
+        e.pointerType === "mouse" &&
+        this.mouseButton !== MOUSE_CLICK_BUTTONS.ALL &&
+        e.button !== this.mouseButton
+      )
+        return;
+      this.activePointerId = e.pointerId;
+    }
+
+    // Capture the pointer so pointermove/pointerup route here even if
+    // the pointer leaves the element — replaces window mousemove/mouseup
+    this.joystick.setPointerCapture(e.pointerId);
+    this.joystick.addEventListener("pointermove", this.boundOnPointerMove, {
+      passive: false,
+    });
+    this.joystick.addEventListener("pointerup", this.boundOnPointerUp);
+    this.joystick.addEventListener("pointercancel", this.boundOnPointerUp);
+
+    this.started = true;
+    this.joystick.style.transition = JOYSTICK_GRAB_TRANSITION;
+    this.joystick.style.cursor = "grabbing";
+  }
+
+  /**
+   * Handles pointermove — computes state and schedules a DOM update.
+   */
+  private onPointerMove(e: PointerEvent) {
+    if (e.pointerId !== this.activePointerId) return;
+    e.preventDefault();
+    this.updateCoordinates(e.clientX, e.clientY);
+  }
+
+  /**
+   * Handles pointerup and pointercancel — cleans up and resets.
+   */
+  private onPointerUp(e: PointerEvent) {
+    if (e.pointerId !== this.activePointerId) return;
+    // Mouse button filter on release
+    if (
+      e.type === "pointerup" &&
+      e.pointerType === "mouse" &&
+      this.mouseButton !== MOUSE_CLICK_BUTTONS.ALL &&
+      e.button !== this.mouseButton
+    )
+      return;
+
+    this.joystick.releasePointerCapture(e.pointerId);
+    this.joystick.removeEventListener("pointermove", this.boundOnPointerMove);
+    this.joystick.removeEventListener("pointerup", this.boundOnPointerUp);
+    this.joystick.removeEventListener("pointercancel", this.boundOnPointerUp);
+
+    if (this.options.dynamicPosition) {
+      _activeIdentifiers.delete(this.activePointerId);
+      this.deactivateDynamicPosition();
+    }
+
+    this.activePointerId = null;
+    this.started = false;
+    this.joystick.style.transition = JOYSTICK_RELEASE_TRANSITION;
+    this.joystick.style.cursor = "grab";
     this.resetCoordinates();
   }
 
   /**
-   * Adds necessary event listeners for the joystick.
+   * Computes all state from raw client coordinates, fires the onMove callback
+   * immediately (so game loops get zero-latency data), then schedules a
+   * single RAF flush to batch all DOM writes into one compositor frame.
    */
-  private addEventListeners = () => {
-    const mcb = this.options.mouseClickButton;
-    if (
-      (typeof mcb === "string" &&
-        Object.keys(MOUSE_CLICK_BUTTONS).includes(mcb)) ||
-      (typeof mcb === "number" && mcb < 6 && mcb > -2)
-    ) {
-      this.mouseButton =
-        typeof mcb === "string"
-          ? MOUSE_CLICK_BUTTONS[mcb as keyof typeof MOUSE_CLICK_BUTTONS]
-          : mcb;
-    }
-    if (this.options.dynamicPosition) {
-      const target = this.options.dynamicPositionTarget || document;
-      // mouse events Listeners
-      target.addEventListener(
-        "mousedown",
-        this.dynamicPositioningMouse as EventListenerOrEventListenerObject
-      );
-      document.addEventListener(
-        "mouseup",
-        this.removeDynamicPositioning as EventListenerOrEventListenerObject
-      );
-      // touch events Listeners
-      target.addEventListener(
-        "touchstart",
-        this.dynamicPositioningTouch as EventListenerOrEventListenerObject
-      );
-      document.addEventListener("touchmove", this.onTouchEvent, {
-        passive: false,
-      });
-      document.addEventListener("touchend", this.removeDynamicPositioning);
-      if (this.options.hideContextMenu) {
-        target.addEventListener("contextmenu", (e) => e.preventDefault());
-        this.joystick.addEventListener("contextmenu", (e) =>
-          e.preventDefault()
-        );
-      }
-    } else {
-      // touch events Listeners
-      this.joystick.addEventListener("touchstart", this.onStartEvent);
-      this.joystick.addEventListener("touchmove", this.onTouchEvent);
-      this.joystick.addEventListener("touchend", this.onStopEvent);
-      // mouse events Listeners
-      this.joystick.addEventListener("mousedown", this.onStartEvent);
-      if (this.options.hideContextMenu) {
-        this.container.addEventListener("contextmenu", (e) =>
-          e.preventDefault()
-        );
-        this.joystick.addEventListener("contextmenu", (e) =>
-          e.preventDefault()
-        );
-      }
-    }
-    // window resize listener
-    window.addEventListener("resize", this.recenterJoystick);
-  };
+  private updateCoordinates(clientX: number, clientY: number) {
+    const dx = clientX - this.centerX;
+    const dy = clientY - this.centerY;
+
+    const rawDistance = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+    const clampedDistance = Math.min(rawDistance, this.options.maxRange);
+
+    const x = Math.round(Math.cos(angle) * clampedDistance);
+    // CSS Y increases downward; joystick Y increases upward → negate
+    const y = -Math.round(Math.sin(angle) * clampedDistance);
+
+    this.x = x;
+    this.y = y;
+    this.angle = Math.round(angle * 10000) / 10000;
+    this.distance = Math.round(rawDistance * 10000) / 10000;
+    this.leveledX = Math.round((x / this.options.maxRange) * this.options.level);
+    this.leveledY = Math.round((y / this.options.maxRange) * this.options.level);
+
+    // Fire callback synchronously — game loops read this on their own RAF tick
+    this.onMove?.({
+      x,
+      y,
+      leveledX: this.leveledX,
+      leveledY: this.leveledY,
+      angle: this.angle,
+      distance: this.distance,
+    });
+
+    // Store pending visual state and schedule one RAF flush
+    this.pendingX = x;
+    this.pendingY = y;
+    this.pendingAngle = angle;
+    this.pendingDistance = rawDistance;
+    this.scheduleDOMUpdate();
+  }
 
   /**
-   * Fetch the coordinates of the joystick container
-   * base on user click, and adds it to document
-   * @param e MouseEvent
+   * Resets all state to center, fires the onMove callback, and writes
+   * the resting transform directly (not via RAF — we're not in the hot loop).
    */
-  private dynamicPositioningMouse = (e: MouseEvent) => {
-    if (this.identifier !== null) return;
-    if (this.mouseButton !== -1 && e.button !== this.mouseButton) return;
-    const identifier = e.x + "-" + e.y;
-    if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
-    this.identifier = identifier;
-    window[JOYSTICK_WINDOW_IDENTIFIER].add(this.identifier);
-    const x = e.clientX;
-    const y = e.clientY;
-    this.container.style.left = x + "px";
-    this.container.style.top = y + "px";
-    this.container.style.bottom = "unset";
-    this.container.style.right = "unset";
-    document.body.appendChild(this.container);
-    this.recenterJoystick();
-    this.onStartEvent(e, false);
-  };
-
-  /**
-   * Fetch the coordinates of the joystick container
-   * base on user touch, and adds it to document
-   * @param event touchstart event
-   */
-  private dynamicPositioningTouch = (event: TouchEvent) => {
-    if (this.identifier !== null) return;
-    const identifier = event.changedTouches[0].identifier;
-    if (window[JOYSTICK_WINDOW_IDENTIFIER].has(identifier)) return;
-    this.identifier = identifier;
-    window[JOYSTICK_WINDOW_IDENTIFIER].add(identifier);
-    // Current touch (for multi-touch)
-    let touch;
-    for (let i = 0; i < event.touches.length; i++) {
-      const tc = event.touches.item(i);
-      if (this.identifier === tc?.identifier) {
-        touch = tc;
-        break;
-      }
-    }
-    if (!touch) return;
-    const x = touch.clientX;
-    const y = touch.clientY;
-    this.container.style.left = x + "px";
-    this.container.style.top = y + "px";
-    this.container.style.bottom = "unset";
-    this.container.style.right = "unset";
-    document.body.appendChild(this.container);
-    this.recenterJoystick();
-    this.onStartEvent(event, false);
-  };
-
-  /**
-   * Stop the dynamic positioning of the joystick
-   * @param  e mousedown/touchend event
-   */
-  private removeDynamicPositioning = (e: MouseEvent | TouchEvent) => {
-    if (this.identifier === null) return;
-    if (e.type === "touchend") {
-      const identifier = (e as TouchEvent).changedTouches[0].identifier;
-      if (this.identifier !== identifier) return;
-    } else if (
-      this.mouseButton !== -1 &&
-      (e as MouseEvent).button !== this.mouseButton
-    )
-      return;
-    window[JOYSTICK_WINDOW_IDENTIFIER].delete(this.identifier);
-    this.identifier = null;
-    this.onStopEvent(e);
-    this.container.remove();
-  };
-
-  /**
-   * Updating the x,y, distance,angle, and joystick position base on the x and y
-   * @param x x coordinate
-   * @param y y coordinate
-   */
-  private updateCoordinates = (x: number, y: number) => {
-    // distance from center
-    this.distance = +Math.sqrt(
-      Math.pow(x - this.centerX, 2) + Math.pow(y - this.centerY, 2)
-    ).toFixed(4);
-    // angle from center in Radians
-    this.angle = +Math.atan2(y - this.centerY, x - this.centerX).toFixed(4);
-    // considering max range
-    const adjustedDistance =
-      this.distance > this.options.maxRange
-        ? this.options.maxRange
-        : this.distance;
-    // x offset from center
-    this.x = Math.round(Math.cos(this.angle) * adjustedDistance);
-    // y offset from center
-    this.y = -Math.round(Math.sin(this.angle) * adjustedDistance);
-    // Scaling x and y to be between -level and +level
-    this.leveledX = Math.round(
-      (this.x / this.options.maxRange) * this.options.level
-    );
-    this.leveledY = Math.round(
-      (this.y / this.options.maxRange) * this.options.level
-    );
-    // setting position of stick
-    this.joystick.style.left = this.options.radius + this.x + "px";
-    this.joystick.style.bottom = this.options.radius + this.y + "px";
-    // distort joystick
-    this.options.distortion && this.distortJoystick();
-    // Triggering Event
-    this.onMove &&
-      this.onMove({
-        x: this.x,
-        y: this.y,
-        leveledX: this.leveledX,
-        leveledY: this.leveledY,
-        distance: this.distance,
-        angle: this.angle,
-      });
-  };
-
-  /**
-   * Resting Coordinates
-   */
-  private resetCoordinates = () => {
+  private resetCoordinates() {
     this.x = 0;
     this.y = 0;
     this.leveledX = 0;
     this.leveledY = 0;
     this.angle = 0;
     this.distance = 0;
-    // reset position of stick
-    this.joystick.style.left = this.options.radius + "px";
-    this.joystick.style.bottom = this.options.radius + "px";
-    // reset joystick distortion
-    this.options.distortion && this.distortJoystick();
-    // Triggering Event
-    this.onMove &&
-      this.onMove({
-        x: this.x,
-        y: this.y,
-        leveledX: this.leveledX,
-        leveledY: this.leveledY,
-        distance: this.distance,
-        angle: this.angle,
-      });
-  };
+    this.pendingX = 0;
+    this.pendingY = 0;
+    this.pendingAngle = 0;
+    this.pendingDistance = 0;
+
+    // Cancel any queued RAF so it doesn't overwrite the reset
+    if (this.rafId !== 0) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = 0;
+    }
+
+    this.joystick.style.transform = "translate(-50%, 50%)";
+    if (this.options.distortion) this.applyDistortion(0, 0, 0);
+
+    this.onMove?.({
+      x: 0,
+      y: 0,
+      leveledX: 0,
+      leveledY: 0,
+      angle: 0,
+      distance: 0,
+    });
+  }
 
   /**
-   * Distort joystick based on distance if further than 70% of maxRange
+   * Schedules a single DOM write on the next animation frame.
+   * Multiple calls within one frame collapse into one flush.
    */
-  private distortJoystick = () => {
-    if (this.distance > this.options.maxRange * 0.7) {
-      // distorting joystick
+  private scheduleDOMUpdate() {
+    if (this.rafId !== 0) return;
+    this.rafId = requestAnimationFrame(this.boundFlushDOMUpdate);
+  }
+
+  /**
+   * RAF callback — performs all DOM writes in a single compositor frame.
+   * Using transform: translate(calc()) keeps updates GPU-composited
+   * (no layout recalculation, no paint).
+   */
+  private flushDOMUpdate() {
+    this.rafId = 0;
+    const { pendingX: x, pendingY: y } = this;
+    this.joystick.style.transform = `translate(calc(-50% + ${x}px), calc(50% - ${y}px))`;
+    if (this.options.distortion) {
+      this.applyDistortion(x, y, this.pendingDistance);
+    }
+  }
+
+  /**
+   * Applies or removes the distortion visual effect.
+   * Composes with the current translate so both are set in one style write.
+   */
+  private applyDistortion(x: number, y: number, distance: number) {
+    const translate = `translate(calc(-50% + ${x}px), calc(50% - ${y}px))`;
+    if (distance > this.options.maxRange * 0.7) {
       this.joystick.style.borderRadius = "70% 80% 70% 15%";
-      this.joystick.style.transform = `translate(-50%, 50%) rotate(${
-        +this.angle + Math.PI / 4
-      }rad)`;
+      this.joystick.style.transform =
+        `${translate} rotate(${this.pendingAngle + Math.PI / 4}rad)`;
     } else {
-      // resting to default
       this.joystick.style.borderRadius = "50%";
-      this.joystick.style.transform = `translate(-50%, 50%) rotate(${
-        Math.PI / 4
-      }rad})`;
+      this.joystick.style.transform = translate;
     }
-  };
+  }
 
   /**
-   * on grab joystick event
-   * @param event
+   * Recomputes the joystick center after a window resize or dynamic activation.
    */
-  private onStartEvent = (
-    event: MouseEvent | TouchEvent,
-    addIdentifier = true
-  ) => {
-    if (event.type === "mousedown") {
-      if (
-        this.mouseButton !== -1 &&
-        (event as MouseEvent).button !== this.mouseButton
-      )
-        return;
-      window.addEventListener("mousemove", this.onMouseEvent);
-      window.addEventListener("mouseup", this.onStopEvent);
-    } else if (addIdentifier) {
-      const identifier = (event as TouchEvent).changedTouches[0].identifier;
-      this.identifier = identifier;
-    }
-    this.started = true;
-    // style adjustment
-    this.joystick.style.transition = this.JOYSTICK_TRANSITION;
-    this.joystick.style.cursor = "grabbing";
-  };
+  private recenterJoystick() {
+    const rect = this.controller.getBoundingClientRect();
+    this.centerX = rect.left + this.options.radius;
+    this.centerY = rect.top + this.options.radius;
+  }
 
   /**
-   * On leave joystick event
-   * @param event leave joystick event
-   */
-  private onStopEvent = (event: MouseEvent | TouchEvent) => {
-    if (event.type === "mouseup") {
-      if (
-        this.mouseButton !== -1 &&
-        (event as MouseEvent).button !== this.mouseButton
-      )
-        return;
-      window.removeEventListener("mousemove", this.onMouseEvent);
-      window.removeEventListener("mouseup", this.onStopEvent);
-    } else {
-      this.identifier = null;
-    }
-    this.started = false;
-    // style adjustment
-    this.joystick.style.transition = "all 0.2s ease-in-out";
-    this.joystick.style.cursor = "grab";
-    // reset values
-    this.resetCoordinates();
-  };
-
-  /**
-   * Update the coordinates of the joystick on touch move
-   * @param event touch move event
-   */
-  private onTouchEvent = (event: TouchEvent) => {
-    // Current touch (for multi-touch)
-    let touch;
-    for (let i = 0; i < event.touches.length; i++) {
-      const tc = event.touches.item(i);
-      if (this.identifier === tc?.identifier) {
-        touch = tc;
-        break;
-      }
-    }
-    if (!touch) return;
-    event.preventDefault();
-    // position of touch
-    const x = touch.clientX;
-    const y = touch.clientY;
-    // update coordinates
-    this.updateCoordinates(x, y);
-  };
-
-  /**
-   * Update the coordinates of the joystick on mouse move
-   * @param event mouse move event
-   */
-  private onMouseEvent = (event: MouseEvent) => {
-    if (!this.started) return;
-    event.preventDefault();
-    // position of mouse
-    const x = event.clientX;
-    const y = event.clientY;
-    // distance from center
-    this.updateCoordinates(x, y);
-  };
-
-  /**
-   * Update the center coordinates of the joystick on window resize
-   */
-  private recenterJoystick = () => {
-    // update the center coordinates
-    this.centerX =
-      this.controller.getBoundingClientRect().left + this.options.radius;
-    this.centerY =
-      this.controller.getBoundingClientRect().top + this.options.radius;
-  };
-
-  /**
-   * To remove the joystick from the DOM and clear all the listeners
+   * Removes the joystick from the DOM and clears all event listeners.
    */
   destroy() {
-    // removing event listeners
+    // Cancel any pending RAF
+    if (this.rafId !== 0) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = 0;
+    }
+
+    // Remove persistent listeners (pointermove/pointerup are self-removing)
     if (this.options.dynamicPosition) {
       const target = this.options.dynamicPositionTarget || document;
-      // mouse events Listeners
       target.removeEventListener(
-        "mousedown",
-        this.dynamicPositioningMouse as EventListenerOrEventListenerObject
+        "pointerdown",
+        this.boundOnPointerDown as EventListenerOrEventListenerObject
       );
-      document.removeEventListener("mouseup", this.removeDynamicPositioning);
-      // touch events Listeners
-      target.removeEventListener(
-        "touchstart",
-        this.dynamicPositioningTouch as EventListenerOrEventListenerObject
-      );
-      document.removeEventListener("touchmove", this.onTouchEvent);
-      document.removeEventListener("touchend", this.removeDynamicPositioning);
+      if (this.options.hideContextMenu) {
+        target.removeEventListener("contextmenu", _preventDefault);
+        this.joystick.removeEventListener("contextmenu", _preventDefault);
+      }
     } else {
-      // touch events Listeners
-      this.joystick.removeEventListener("touchstart", this.onStartEvent);
-      this.joystick.removeEventListener("touchmove", this.onTouchEvent);
-      this.joystick.removeEventListener("touchend", this.onStopEvent);
-      // mouse events Listeners
-      this.joystick.removeEventListener("mousedown", this.onStartEvent);
+      this.joystick.removeEventListener("pointerdown", this.boundOnPointerDown);
+      if (this.options.hideContextMenu) {
+        this.container.removeEventListener("contextmenu", _preventDefault);
+        this.joystick.removeEventListener("contextmenu", _preventDefault);
+      }
     }
-    window.removeEventListener("resize", this.recenterJoystick);
+    window.removeEventListener("resize", this.boundOnResize);
 
-    // removing elements
+    // In case destroy() is called mid-drag, clean up captured pointer listeners
+    if (this.activePointerId !== null) {
+      this.joystick.removeEventListener("pointermove", this.boundOnPointerMove);
+      this.joystick.removeEventListener("pointerup", this.boundOnPointerUp);
+      this.joystick.removeEventListener("pointercancel", this.boundOnPointerUp);
+      if (this.options.dynamicPosition) {
+        _activeIdentifiers.delete(this.activePointerId);
+      }
+    }
+
+    // Remove DOM elements
     this.style.remove();
     this.container.remove();
 
-    // removing from active joysticks
-    if (Array.isArray(window[JOYSTICK_WINDOW_ACTIVE]))
-      window[JOYSTICK_WINDOW_ACTIVE] = window[JOYSTICK_WINDOW_ACTIVE].filter(
-        (joystick) => joystick !== this
-      );
+    // Remove from active joysticks registry
+    const idx = _activeJoysticks.indexOf(this);
+    if (idx !== -1) _activeJoysticks.splice(idx, 1);
   }
 }
 

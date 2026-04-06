@@ -102,11 +102,5 @@ typings/
 # TernJS port file
 .tern-port
 
-# Distribution
-dist/es
-dist/lib
-dist/ts
-dist/umd/*
-
-# Except this specific file
-!dist/umd/joystick-controller.min.js
+# Distribution (built by Netlify at deploy time, not committed)
+dist/

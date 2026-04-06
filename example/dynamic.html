@@ -105,7 +105,8 @@
       <div id="panel-left"></div>
       <div id="panel-right"></div>
     </div>
-    <script src="https://cdn.statically.io/gh/cyrus2281/joystick-controller/main/dist/umd/joystick-controller.min.js"></script>
+    <script src="./joystick-controller.umd.js"></script>
+    <script src="../dist/joystick-controller.umd.js"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"
       integrity="sha512-TBsRPqWeusJljmmEij9waZ9K+qO2m6W1pu+5h5BjxvdizD1Izn1wwJyVYNFFFH42tIfedURxTsgtXF2Lah2PXA=="
@@ -118,7 +119,7 @@
     </script>
     <script type="module">
       // uncomment for dev. (the CDN uses the global import, no need for module import)
-      // import JoystickController from '../dist/es/joystick-controller.js';
+      // import JoystickController from '../dist/joystick-controller.mjs';
 
       const x = document.querySelector("#x");
       const y = document.querySelector("#y");
