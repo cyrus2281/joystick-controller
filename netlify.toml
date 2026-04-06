@@ -1,3 +1,3 @@
 [build]
-  command = "npm install && npm run build && cp dist/joystick-controller.umd.js example/joystick-controller.umd.js"
+  command = "npm install && npm run build && cp ./dist/joystick-controller.umd.js ./example/joystick-controller.umd.js"
   publish = "."
